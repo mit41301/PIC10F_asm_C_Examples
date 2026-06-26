@@ -1,0 +1,404 @@
+MPASM  5.51                 DICE_FIRMWARE.ASM   6-10-2026  19:31:12         PAGE  1
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+                      00001  TITLE ELECTRONIC DICE ON PIC10F200 PROJECT
+                      00002  SUBTITLE DICE with 7 LED
+                      00003 
+                      00004     #include <p10F200.inc>
+                      00001         LIST
+                      00002 
+                      00003 ;==========================================================================
+                      00004 ;  MPASM PIC10F200 processor include
+                      00005 ; 
+                      00006 ;  (c) Copyright 1999-2013 Microchip Technology, All rights reserved
+                      00007 ;==========================================================================
+                      00008 
+                      00151         LIST
+                      00005 
+0FFF   0FEB           00006     __CONFIG   _IntRC_OSC & _WDT_OFF & _MCLRE_OFF & _CP_OFF
+0100   0006 0002 0008 00007     __IDLOCS H'6282'
+       0002 
+                      00008 
+  00000010            00009 RAM  set  h'10'
+                      00010 
+                      00011      cblock RAM
+  00000010            00012 face_value          ;EQU     0x10        ; Random number
+  00000011            00013 disp_timer_1        ;EQU     0x11        ; Delay counter 1
+  00000012            00014 disp_timer_2        ;EQU     0x12        ; Delay counter 2
+  00000013            00015 multiplexing_timer  ;EQU     0x13        ; Multiplexing counter
+  00000014            00016 ghost_wipe_timer    ;EQU     0x14        ; Ghosting protection counter
+  00000015            00017 RAM_                            ;Dummy End of RAM variable location indicator
+                      00018      endc
+                      00019 
+                      00020      if RAM_ > h'20'
+                      00021      error "File register usage overflow"
+                      00022      endif
+                      00023 
+0000                  00024     ORG     0x0000
+                      00025 
+0000                  00026 START:
+0000   0EFE           00027     ANDLW   ~1
+0001   0025           00028     MOVWF   OSCCAL              ; Calibration
+0002   0C00           00029     MOVLW   B'00000000'
+0003   0002           00030     OPTION                      ; Configuring Wakeup on GP3 pin
+0004   0070           00031     CLRF    face_value          ; Clearing variable face_value
+                      00032 
+0005                  00033 MAIN_LOOP:
+0005   0C0F           00034     MOVLW   B'1111'
+0006   0006           00035     TRIS    GPIO                ; Setting all gpios as an input (Hi-Z state)
+                      00036 
+0007   0766           00037     BTFSS   GPIO, 3             ; Test GP3 state
+0008   0A0B           00038     GOTO    DICE_RANDOM_ROLL    ; If GP3 == LOW (Start rolling)
+0009   0003           00039     SLEEP                       ; If GP3 == HIGH (Power down)
+000A   0000           00040     NOP
+                      00041 
+000B                  00042 DICE_RANDOM_ROLL:               ; Random number generation
+000B   02B0           00043     INCF    face_value, F       ; Increment counter
+MPASM  5.51                 DICE_FIRMWARE.ASM   6-10-2026  19:31:12         PAGE  2
+ELECTRONIC DICE ON PIC10F200 PROJECT
+DICE with 7 LED
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+000C   0C07           00044     MOVLW   7
+000D   0190           00045     XORWF   face_value, W       ; Compare face_value with 7
+000E   0743           00046     BTFSS   STATUS, Z
+000F   0A12           00047     GOTO    CHECK_BUTTON        ; If face_value < 7
+0010   0C01           00048     MOVLW   1                   ; If face_value = 7
+0011   0030           00049     MOVWF   face_value          ; Reset counter to 1
+                      00050 
+0012                  00051 CHECK_BUTTON:
+0012   0766           00052     BTFSS   GPIO, 3             ; Test GP3 state
+0013   0A0B           00053     GOTO    DICE_RANDOM_ROLL    ; If GP3 == LOW (Keep rolling)
+                      00054 
+0014   0CFF           00055     MOVLW   0xFF                ; Loading literals to verification timer
+0015   0031           00056     MOVWF   disp_timer_1
+                      00057 
+                      00058 ; SOFTWARE DEBOUNCING (ignore change in state on GP3 if it is shorter than 10 ms) 
+0016                  00059 VERIFY_STABILITY_LOOP:
+0016   0C20           00060     MOVLW   0x20                ; Loading sampling frequency
+0017   0032           00061     MOVWF   disp_timer_2
+                      00062 
+0018                  00063 SAMPLE_PIN_LOOP:
+0018   0766           00064     BTFSS   GPIO, 3             ; Test GP3 state again
+0019   0A0B           00065     GOTO    DICE_RANDOM_ROLL    ; If GP3 == LOW (Bounce detected - Reset)
+                      00066 
+001A   02F2           00067     DECFSZ  disp_timer_2, F
+001B   0A18           00068     GOTO    SAMPLE_PIN_LOOP
+                      00069 
+001C   02F1           00070     DECFSZ  disp_timer_1, F     ; Decrement main verification timer
+001D   0A16           00071     GOTO    VERIFY_STABILITY_LOOP
+                      00072 
+001E   0A1F           00073     GOTO    START_ANIMATION     ; Button is stable
+                      00074 
+001F                  00075 START_ANIMATION:
+                      00076                                 ; STEP 1: DIAGONAL 1
+001F   0C04           00077     MOVLW   B'0100'             ; GP0 = LOW, GP2 == HIGH
+0020   0026           00078     MOVWF   GPIO
+0021   0C0A           00079     MOVLW   B'1010'             ; Configuring GP2 and GP0 as output
+0022   0006           00080     TRIS    GPIO
+0023   0949           00081     CALL    ANIM_DELAY          ; Animation display delay
+0024   093E           00082     CALL    ANIM_OFF            ; Animation parts separation for visual effect
+                      00083 
+                      00084                                 ; STEP 2: DIAGONAL 2
+0025   0C01           00085     MOVLW   B'0001'             ; GP0 == HIGH, GP2 == LOW
+0026   0026           00086     MOVWF   GPIO
+0027   0C0A           00087     MOVLW   B'1010'             ; Configuring GP2 and GP0 as output
+0028   0006           00088     TRIS    GPIO
+0029   0949           00089     CALL    ANIM_DELAY
+002A   093E           00090     CALL    ANIM_OFF
+                      00091 
+                      00092                                 ; STEP 3: CENTER
+002B   0C04           00093     MOVLW   B'0100'             ; GP2 == HIGH, GP1 == LOW
+002C   0026           00094     MOVWF   GPIO
+002D   0C09           00095     MOVLW   B'1001'             ; Configuring GP1 and GP2 as output
+002E   0006           00096     TRIS    GPIO
+MPASM  5.51                 DICE_FIRMWARE.ASM   6-10-2026  19:31:12         PAGE  3
+ELECTRONIC DICE ON PIC10F200 PROJECT
+DICE with 7 LED
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+002F   0949           00097     CALL    ANIM_DELAY
+0030   093E           00098     CALL    ANIM_OFF
+                      00099 
+                      00100                                 ; STEP 4: SIDES
+0031   0C03           00101     MOVLW   B'0011'             ; GP0 == HIGH, GP1 == HIGH
+0032   0026           00102     MOVWF   GPIO
+0033   0C08           00103     MOVLW   B'1000'             
+0034   0006           00104     TRIS    GPIO
+0035   0949           00105     CALL    ANIM_DELAY
+0036   093E           00106     CALL    ANIM_OFF
+                      00107 
+                      00108                                 ; REPEAT FOR EFFECT
+0037   0C01           00109     MOVLW   B'0001'
+0038   0026           00110     MOVWF   GPIO
+0039   0C0A           00111     MOVLW   B'1010'
+003A   0006           00112     TRIS    GPIO
+003B   0949           00113     CALL    ANIM_DELAY
+003C   093E           00114     CALL    ANIM_OFF
+                      00115 
+003D   0A52           00116     GOTO    INIT_DISPLAY        ; End of animation
+                      00117 
+003E                  00118 ANIM_OFF:
+003E   0C0F           00119     MOVLW   B'1111'
+003F   0006           00120     TRIS    GPIO                ; Setting all gpios as an input (OFF)
+                      00121 
+0040   0CFF           00122     MOVLW   0xFF                ; Loading literals to delay timers
+0041   0031           00123     MOVWF   disp_timer_1
+0042   0C4F           00124     MOVLW   0x4F
+0043   0032           00125     MOVWF   disp_timer_2
+0044                  00126 ANIM_OFF_LOOP:
+0044   02F1           00127     DECFSZ  disp_timer_1, F
+0045   0A44           00128     GOTO    ANIM_OFF_LOOP
+0046   02F2           00129     DECFSZ  disp_timer_2, F
+0047   0A44           00130     GOTO    ANIM_OFF_LOOP
+                      00131 
+0048   0800           00132     RETLW   0
+                      00133 
+0049                  00134 ANIM_DELAY:
+0049   0CFF           00135     MOVLW   0xFF                ; Loading literals to delay timers
+004A   0031           00136     MOVWF   disp_timer_1
+004B   0C17           00137     MOVLW   0x17
+004C   0032           00138     MOVWF   disp_timer_2
+004D                  00139 ANIM_DELAY_LOOP:
+004D   02F1           00140     DECFSZ  disp_timer_1, F
+004E   0A4D           00141     GOTO    ANIM_DELAY_LOOP
+004F   02F2           00142     DECFSZ  disp_timer_2, F
+0050   0A4D           00143     GOTO    ANIM_DELAY_LOOP
+0051   0800           00144     RETLW   0
+                      00145 
+                      00146 
+0052                  00147 INIT_DISPLAY:
+0052   0CFF           00148     MOVLW   0xFF                ; Loading literals to timers registers
+0053   0031           00149     MOVWF   disp_timer_1
+MPASM  5.51                 DICE_FIRMWARE.ASM   6-10-2026  19:31:12         PAGE  4
+ELECTRONIC DICE ON PIC10F200 PROJECT
+DICE with 7 LED
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+0054   0C0F           00150     MOVLW   0x0F
+0055   0032           00151     MOVWF   disp_timer_2
+                      00152 
+0056                  00153 MAIN_DISPLAY:
+                      00154     ; PHASE A DISPLAY ;
+0056   0C0F           00155     MOVLW   B'1111'             ; Discharging parasitic capacitance
+0057   0006           00156     TRIS    GPIO
+0058   0974           00157     CALL    GHOST_WIPE_DELAY
+                      00158 
+0059   0210           00159     MOVF    face_value, W       ; Configuring GPIOS for phase A
+005A   0979           00160     CALL    PHASE_A_GPIO
+005B   0026           00161     MOVWF   GPIO
+                      00162 
+005C   0210           00163     MOVF    face_value, W       ; Configuring logic state for phase A
+005D   0981           00164     CALL    PHASE_A_TRIS
+005E   0006           00165     TRIS    GPIO
+                      00166 
+005F   096F           00167     CALL    MULTIPLEXING_DELAY
+                      00168 
+                      00169     ; PHASE B DISPLAY ;
+0060   0C0F           00170     MOVLW   B'1111'             ; Discharging parasitic capacitance
+0061   0006           00171     TRIS    GPIO
+0062   0974           00172     CALL    GHOST_WIPE_DELAY
+                      00173 
+0063   0210           00174     MOVF    face_value, W       ; Configuring GPIOS for phase B
+0064   0989           00175     CALL    PHASE_B_GPIO
+0065   0026           00176     MOVWF   GPIO
+                      00177 
+0066   0210           00178     MOVF    face_value, W       ; Configuring logic state for phase B
+0067   0991           00179     CALL    PHASE_B_TRIS
+0068   0006           00180     TRIS    GPIO
+                      00181 
+0069   096F           00182     CALL    MULTIPLEXING_DELAY
+                      00183 
+006A   02F1           00184     DECFSZ  disp_timer_1, F     ; Delay loop for display duration
+006B   0A56           00185     GOTO    MAIN_DISPLAY
+006C   02F2           00186     DECFSZ  disp_timer_2, F
+006D   0A56           00187     GOTO    MAIN_DISPLAY
+                      00188 
+006E   0A05           00189     GOTO    MAIN_LOOP           ; End of display procedure
+                      00190 
+006F                  00191 MULTIPLEXING_DELAY:             ; Delay loop for time between the phase A and B
+006F   0C20           00192     MOVLW   0x20
+0070   0033           00193     MOVWF   multiplexing_timer
+0071                  00194 MULTIPLEXING_DELAY_LOOP:
+0071   02F3           00195     DECFSZ  multiplexing_timer, F
+0072   0A71           00196     GOTO    MULTIPLEXING_DELAY_LOOP
+0073   0800           00197     RETLW   0
+                      00198 
+0074                  00199 GHOST_WIPE_DELAY:               ; Delay loop for discharging parasitic capacitance
+0074   0C20           00200     MOVLW   0x20
+0075   0034           00201     MOVWF   ghost_wipe_timer
+0076                  00202 GHOST_WIPE_DELAY_LOOP:
+MPASM  5.51                 DICE_FIRMWARE.ASM   6-10-2026  19:31:12         PAGE  5
+ELECTRONIC DICE ON PIC10F200 PROJECT
+DICE with 7 LED
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+0076   02F4           00203     DECFSZ  ghost_wipe_timer, F
+0077   0A76           00204     GOTO    GHOST_WIPE_DELAY_LOOP
+0078   0800           00205     RETLW   0
+                      00206 
+0079                  00207 PHASE_A_GPIO:
+0079   01E2           00208     ADDWF   PCL, F
+007A   0800           00209     RETLW   b'0000'             ; 0
+007B   0800           00210     RETLW   b'0000'             ; 1 (OFF)
+007C   0801           00211     RETLW   b'0001'             ; 2 (GP0 == HIGH)
+007D   0801           00212     RETLW   b'0001'             ; 3 (GP0 == HIGH)
+007E   0801           00213     RETLW   b'0001'             ; 4 (GP0 == HIGH)
+007F   0801           00214     RETLW   b'0001'             ; 5 (GP0 == HIGH)
+0080   0803           00215     RETLW   b'0011'             ; 6 (GP0 == HIGH, GP1 == HIGH)
+                      00216 
+0081                  00217 PHASE_A_TRIS:
+0081   01E2           00218     ADDWF   PCL, F
+0082   080F           00219     RETLW   b'1111'             ; 0
+0083   080F           00220     RETLW   b'1111'             ; 1 (OFF)
+0084   0808           00221     RETLW   b'1000'             ; 2 (Configuring GP0, GP1, GP2 as an output)
+0085   0808           00222     RETLW   b'1000'             ; 3 (Configuring GP0, GP1, GP2 as an output)
+0086   0808           00223     RETLW   b'1000'             ; 4 (Configuring GP0, GP1, GP2 as an output)
+0087   0808           00224     RETLW   b'1000'             ; 5 (Configuring GP0, GP1, GP2 as an output)
+0088   0808           00225     RETLW   b'1000'             ; 6 (Configuring GP0, GP1, GP2 as an output)
+                      00226 
+0089                  00227 PHASE_B_GPIO:
+0089   01E2           00228     ADDWF   PCL, F
+008A   0800           00229     RETLW   b'0000'             ; 0
+008B   0804           00230     RETLW   b'0100'             ; 1 (GP2 == HIGH)
+008C   0804           00231     RETLW   b'0100'             ; 2 (OFF)
+008D   0804           00232     RETLW   b'0100'             ; 3 (GP2 == HIGH)
+008E   0804           00233     RETLW   b'0100'             ; 4 (GP2 == HIGH)
+008F   0804           00234     RETLW   b'0100'             ; 5 (GP2 == HIGH)
+0090   0804           00235     RETLW   b'0100'             ; 6 (GP2 == HIGH)
+                      00236 
+0091                  00237 PHASE_B_TRIS:
+0091   01E2           00238     ADDWF   PCL, F
+0092   080F           00239     RETLW   b'1111'             ; 0
+0093   0809           00240     RETLW   b'1001'             ; 1 (Configuring GP1 and GP2 as an output)
+0094   080F           00241     RETLW   b'1111'             ; 2 (OFF)
+0095   0809           00242     RETLW   b'1001'             ; 3 (Configuring GP1 and GP2 as an output)
+0096   080A           00243     RETLW   b'1010'             ; 4 (Configuring GP0 and GP2 as an output)
+0097   0808           00244     RETLW   b'1000'             ; 5 (Configuring GP0, GP1 and GP2 as an output)
+0098   080A           00245     RETLW   b'1010'             ; 6 (Configuring GP0 and GP2 as an output)
+                      00246 
+                      00247     END
+MPASM  5.51                 DICE_FIRMWARE.ASM   6-10-2026  19:31:12         PAGE  6
+ELECTRONIC DICE ON PIC10F200 PROJECT
+DICE with 7 LED
+SYMBOL TABLE
+  LABEL                             VALUE 
+
+ANIM_DELAY                        00000049
+ANIM_DELAY_LOOP                   0000004D
+ANIM_OFF                          0000003E
+ANIM_OFF_LOOP                     00000044
+C                                 00000000
+CAL0                              00000001
+CAL1                              00000002
+CAL2                              00000003
+CAL3                              00000004
+CAL4                              00000005
+CAL5                              00000006
+CAL6                              00000007
+CHECK_BUTTON                      00000012
+DC                                00000001
+DICE_RANDOM_ROLL                  0000000B
+F                                 00000001
+FOSC4                             00000000
+FSR                               00000004
+GHOST_WIPE_DELAY                  00000074
+GHOST_WIPE_DELAY_LOOP             00000076
+GP0                               00000000
+GP1                               00000001
+GP2                               00000002
+GP3                               00000003
+GPIO                              00000006
+GPWUF                             00000007
+INDF                              00000000
+INIT_DISPLAY                      00000052
+MAIN_DISPLAY                      00000056
+MAIN_LOOP                         00000005
+MULTIPLEXING_DELAY                0000006F
+MULTIPLEXING_DELAY_LOOP           00000071
+NOT_GPPU                          00000006
+NOT_GPWU                          00000007
+NOT_PD                            00000003
+NOT_TO                            00000004
+OSCCAL                            00000005
+PCL                               00000002
+PHASE_A_GPIO                      00000079
+PHASE_A_TRIS                      00000081
+PHASE_B_GPIO                      00000089
+PHASE_B_TRIS                      00000091
+PS0                               00000000
+PS1                               00000001
+PS2                               00000002
+PSA                               00000003
+RAM                               00000010
+RAM_                              00000015
+SAMPLE_PIN_LOOP                   00000018
+START                             00000000
+START_ANIMATION                   0000001F
+STATUS                            00000003
+T0CS                              00000005
+MPASM  5.51                 DICE_FIRMWARE.ASM   6-10-2026  19:31:12         PAGE  7
+ELECTRONIC DICE ON PIC10F200 PROJECT
+DICE with 7 LED
+SYMBOL TABLE
+  LABEL                             VALUE 
+
+T0SE                              00000004
+TMR0                              00000001
+TRISIO0                           00000000
+TRISIO1                           00000001
+TRISIO2                           00000002
+TRISIO3                           00000003
+VERIFY_STABILITY_LOOP             00000016
+W                                 00000000
+Z                                 00000002
+_CONFIG                           00000FFF
+_CP_OFF                           00000FFF
+_CP_ON                            00000FF7
+_IDLOC0                           00000100
+_IDLOC1                           00000101
+_IDLOC2                           00000102
+_IDLOC3                           00000103
+_IntRC_OSC                        00000FFF
+_MCLRE_OFF                        00000FEF
+_MCLRE_ON                         00000FFF
+_OSC_IntRC                        00000FFF
+_WDTE_OFF                         00000FFB
+_WDTE_ON                          00000FFF
+_WDT_OFF                          00000FFB
+_WDT_ON                           00000FFF
+__10F200                          00000001
+__DEBUG                           1
+disp_timer_1                      00000011
+disp_timer_2                      00000012
+face_value                        00000010
+ghost_wipe_timer                  00000014
+multiplexing_timer                00000013
+
+
+MEMORY USAGE MAP ('X' = Used,  '-' = Unused)
+
+0000 : XXXXXXXXXXXXXXXX XXXXXXXXXXXXXXXX XXXXXXXXXXXXXXXX XXXXXXXXXXXXXXXX
+0040 : XXXXXXXXXXXXXXXX XXXXXXXXXXXXXXXX XXXXXXXXXXXXXXXX XXXXXXXXXXXXXXXX
+0080 : XXXXXXXXXXXXXXXX XXXXXXXXX------- ---------------- ----------------
+0100 : XXXX------------ ---------------- ---------------- ----------------
+0FC0 : ---------------- ---------------- ---------------- ---------------X
+
+All other memory blocks unused.
+
+Program Memory Words Used:   153
+Program Memory Words Free:   103
+
+
+Errors   :     0
+Warnings :     0 reported,     0 suppressed
+Messages :     0 reported,     0 suppressed
+
+
