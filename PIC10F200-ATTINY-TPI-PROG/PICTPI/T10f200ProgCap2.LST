@@ -1,0 +1,707 @@
+MPASM 5.64               T10F200PROGCAP2.ASM   1-4-2017  13:33:47         PAGE  1
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+                      00001         Processor       10f200
+                      00002         #include    <p10f200.inc>
+                      00001         LIST
+                      00002 
+                      00003 ;==========================================================================
+                      00004 ; Build date : Oct 21 2015
+                      00005 ;  MPASM PIC10F200 processor include
+                      00006 ; 
+                      00007 ;  (c) Copyright 1999-2015 Microchip Technology, All rights reserved
+                      00008 ;==========================================================================
+                      00009 
+                      00152         LIST
+                      00003         radix   DEC
+                      00004 ; ext reset, no code protect, no watchdog, 4Mhz int clock
+0FFF   0FFB           00005      __CONFIG    _MCLRE_ON & _CP_OFF & _WDT_OFF & _IntRC_OSC
+                      00006         list
+  00000010            00007 Ram             equ     010h
+  00000010            00008 AddressHi       equ     Ram
+  00000011            00009 AddressLo       equ     AddressHi+1
+  00000012            00010 DataHi          equ     AddressLo+1
+  00000013            00011 DataLo          equ     DataHi+1
+  00000014            00012 Dtmp            equ     DataLo+1
+  00000015            00013 Otemp           equ     Dtmp+1
+  00000016            00014 IP              equ     Otemp+1
+  00000017            00015 Wr1             equ     IP+1
+  00000017            00016 RetCode         equ     Wr1
+  00000018            00017 Stmp            equ     Wr1+1
+  00000019            00018 Xtmp            equ     Stmp+1
+  0000001A            00019 Ztmp            equ     Xtmp+1
+                      00020 
+  00000000            00021 sClk            equ     0               ; TPI clock
+  00000001            00022 sDat            equ     1               ; TPI data
+  00000000            00023 sRst            equ     0               ; TPI reset is shared with the clock
+  00000002            00024 txbit           equ     2               ; serial IO to console/app
+  00000002            00025 rxbit           equ     2               ; uses just one bit !
+  00000038            00026 mask            equ     ~(1 << sClk | 1 << txbit |1 << sDat | 1 << sRst) & 3fh
+  000000C0            00027 optval          equ     b'11000000'
+                      00028 ;
+                      00029 ;
+                      00030 ;
+0000                  00031         org     0x00
+0000   0025           00032 Start   movwf   OSCCAL                  ; set oscillator callibration
+0001   0ACD           00033         goto    Rst
+                      00034 
+                      00035 
+                      00036 #define TESTING
+                      00037         #ifdef  TESTING
+                      00038         #include        <Tiny10DBGS.inc>                ; includes IO roitines and set clear macros
+                      00001 ;
+                      00002 ; this is for the console IO stuff when testing
+                      00003 ;
+                      00004 #define B9600
+                      00005         #ifdef  B9600
+MPASM 5.64               T10F200PROGCAP2.ASM   1-4-2017  13:33:47         PAGE  2
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+  00000020            00006 delf    equ     0x20
+  00000010            00007 delh    equ     delf/2
+                      00008         #endif
+                      00009         #ifdef  B4800
+                      00010 delf    equ     0x40
+                      00011 delh    equ     delf/2
+                      00012         #endif
+                      00013         #ifdef  B2400
+                      00014 delf    equ     0x8a
+                      00015 delh    equ     delf/2
+                      00016         #endif
+                      00017         #ifdef  B1200
+                      00018 delf    equ     0xd0x
+                      00019 delh    equ     delf/2
+                      00020         #endif  
+                      00021         #ifdef  B600
+                      00022 delf    equ     0xd0
+                      00023 delh    equ     delf/2
+                      00024         #endif
+                      00025 ;       #ifndef Tset
+                      00026 ;Tset   macro   bit
+                      00027 ;       movlw   mask | 1 << bit
+                      00028 ;       TRIS    GPIO
+                      00029 ;       endm
+                      00030 ;       #endif
+                      00031 ;       #ifndef Tclr
+                      00032 ;Tclr   macro   bit
+                      00033 ;       movlw   mask & ~( 1 << bit )
+                      00034 ;       TRIS    GPIO
+                      00035 ;       endm
+                      00036 ;       #endif
+                      00037 
+                      00038 
+                      00039 sndByte macro   byte
+                      00040         movlw   byte
+                      00041         call    rsndFrame
+                      00042         endm
+                      00043 
+                      00044 ;
+                      00045 ; make Even parity return 0 or 1 from entered byte
+                      00046 ;
+                      00047 mmakepar        macro
+                      00048         movwf   Dtmp
+                      00049         swapf   Dtmp,w
+                      00050         xorwf   Dtmp,w
+                      00051         movwf   Dtmp
+                      00052         movlw   041h
+                      00053         addwf   Dtmp,f
+                      00054         movlw   07ch
+                      00055         iorwf   Dtmp,f
+                      00056         movlw   02h
+                      00057         addwf   Dtmp,f
+                      00058         rlf     Dtmp,f
+MPASM 5.64               T10F200PROGCAP2.ASM   1-4-2017  13:33:47         PAGE  3
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+                      00059         endm
+                      00060 
+                      00061 
+                      00062 
+                      00063 
+                      00064 Tset    macro   bit
+                      00065         movlw   mask | 1 << bit
+                      00066         TRIS    GPIO
+                      00067         endm
+                      00068 
+                      00069 Tclr    macro   bit
+                      00070         movlw   mask & ~( 1 << bit )
+                      00071         TRIS    GPIO
+                      00072         endm
+                      00073 
+                      00074 ;
+                      00075 ; print location mHval as two hex digits <4-7><0-3>
+                      00076 ;
+                      00077 Phex    macro   mHval
+                      00078         swapf   mHval,w
+                      00079         call    rPnib
+                      00080         movf    mHval,w
+                      00081         call    rPnib
+                      00082         endm
+                      00083 ;
+                      00084 ; Pchar <mIval> print immediate value as a character
+                      00085 ;
+                      00086 Pchar   macro   mIval
+                      00087         movlw   mIval
+                      00088         call    routch
+                      00089         endm
+                      00090 
+                      00091         
+                      00092 ;
+                      00093 ; convert bits <0-3> of W to its ASCII equvalent in Otemp then prints it out 
+                      00094 ;
+0002   0E0F           00095 rPnib   andlw   0fh
+0003   0035           00096         movwf   Otemp
+0004   0C06           00097         movlw   6
+0005   01F5           00098         addwf   Otemp,f
+0006   0C2A           00099         movlw   0x2a
+0007   0623           00100         skpndc
+0008   0C31           00101         movlw   0x2a+0x07
+0009   01D5           00102         addwf   Otemp,w
+000A   0A20           00103         goto    routch
+                      00104 ;
+                      00105 ; rinch read one char from serial line to Otemp echo back
+                      00106 ;
+000B                  00107 rinch
+                      00108         #if     rxbit==txbit
+                      00109         Tset    rxbit
+000B   0C3C               M         movlw   mask | 1 << rxbit
+000C   0006               M         TRIS    GPIO
+MPASM 5.64               T10F200PROGCAP2.ASM   1-4-2017  13:33:47         PAGE  4
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+                      00110         #endif
+000D   0C80           00111         movlw   080h
+000E   0035           00112         movwf   Otemp                   ; set accumulator to 080h to act as a flag ...
+000F   0646           00113 in0     btfsc   GPIO,rxbit              ; wait for a start bit
+0010   0A0F           00114         goto    in0
+0011   0C30           00115         movlw   delh+delf               ; wait one and a half bit times
+0012   0034           00116 in1     movwf   Dtmp                    ; and one bit time
+0013   02F4           00117         decfsz  Dtmp,f
+0014   0A13           00118         goto    $-1
+0015   0403           00119         clrc                            ; assume we got a zero
+0016   0646           00120         btfsc   GPIO,rxbit              ; we did so skip ..
+0017   0503           00121         setc                            ; else cy=1
+0018   0C20           00122         movlw   delf                    ; for one bit delay
+0019   0335           00123         rrf     Otemp,f
+001A   0703           00124         skpc
+001B   0A12           00125         goto    in1
+001C   0034           00126         movwf   Dtmp                    ; skip the stop bt
+001D   02F4           00127         decfsz  Dtmp,f
+001E   0A1D           00128         goto    $-1     
+001F   0215           00129 in2     movf    Otemp,w                 ; for outch !!!
+                      00130 
+                      00131 ;
+                      00132 ; routch Real output char rtn ... patchable .. munches Stmp=bit counter, Ztmp=delay counter and Dtmp=Dat
+                            a accumulator
+                      00133 ;
+0020   0034           00134 routch  movwf   Dtmp                    ; save entry byte here
+                      00135         #if     rxbit==txbit
+                      00136         Tclr    txbit
+0021   0C38               M         movlw   mask & ~( 1 << txbit )
+0022   0006               M         TRIS    GPIO
+                      00137         #endif
+0023   0C0B           00138 outch2  movlw   11                      ; 8 bits + one stop
+0024   0038           00139         movwf   Stmp                    ; for now !!!!!!
+0025   0446           00140         bcf     GPIO,txbit              ; send a start bit
+0026   0C20           00141         movlw   delf
+0027   003A           00142 oc2     movwf   Ztmp
+0028   02FA           00143         decfsz  Ztmp,f
+0029   0A28           00144         goto    $-1                     ; wait one bit time
+002A   0503           00145         setc                            ; shift stop bits into accum
+002B   0334           00146         rrf     Dtmp,f                  ; shift/test LSB
+002C   0703           00147         skpc
+002D   0446           00148         bcf     GPIO,txbit              ; assume it's a 0
+002E   0603           00149         skpnc                           ; it was so skip
+002F   0546           00150         bsf     GPIO,txbit              ; else so do a 1
+0030   02F8           00151         decfsz  Stmp,f                  ; backup bit count
+0031   0A27           00152         goto    oc2
+0032   0800           00153         retlw   0
+                      00154 
+                      00155         
+                      00039         #endif                          ; end of TESTING
+                      00040 
+                      00041 
+                      00042 sndRx   sndByte 024h                    ; send a read byte command and increment pointer
+MPASM 5.64               T10F200PROGCAP2.ASM   1-4-2017  13:33:47         PAGE  5
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+0033   0C24               M         movlw   024h
+0034   0958               M         call    rsndFrame
+0035                  00043 rgetByte
+                      00044         Tset    sDat                    ; set data line to INPUT
+0035   0C3A               M         movlw   mask | 1 << sDat
+0036   0006               M         TRIS    GPIO
+0037   0079           00045         clrf    Xtmp                    ; try this many times ( for i=0 i <256; i++)
+0038   00F9           00046 getBlp  decf    Xtmp,f                  ; check loop count (i--)
+0039   0643           00047         skpnz
+003A   08FF           00048         retlw   -1
+003B   0406           00049         bcf     GPIO,sClk               ; set clock LOW to get one bit
+003C   0C00           00050         movlw   0                       ; assume we have a zero
+003D   0626           00051         btfsc   GPIO,sDat               ; it is so skip
+003E   0C01           00052         movlw   1                       ; Cy=1 ....
+003F   0506           00053         bsf     GPIO,sClk               ; set clock HIGH
+0040   0D00           00054         iorlw   0                       ; 0 or 1 ? 0=a start bit ....
+0041   0743           00055         skpz                            ; it was zero so carry on
+0042   0A38           00056         goto    getBlp
+0043   0077           00057         clrf    Wr1                     ; we got a start bit sooooo ..clear down accum
+0044   0074           00058         clrf    Dtmp                    ; ... 16 bits
+0045   0C0B           00059         movlw   11                      ; collect 11 bits: 8 data, P , st, st
+0046   0039           00060         movwf   Xtmp                    ; for(Xtmp=11; Xtmp >0; Xtmp - -)
+0047   0406           00061 getB0   bcf     GPIO,sClk               ; set clock LOW to get one bit
+0048   0626           00062         btfsc   GPIO,sDat               ; it is a zero so skip
+0049   0574           00063         bsf     Dtmp,3                  ; put a bit in the accumulator and ....
+004A   0506           00064         bsf     GPIO,sClk               ; set clock HIGH
+004B   0403           00065         clrc                            ; shift a zero to the MSB 
+004C   0334           00066         rrf     Dtmp,f                  ; now do a ...
+004D   0337           00067         rrf     Wr1,f                   ; ... 16 bit shift
+004E   02F9           00068         decfsz  Xtmp,f                  ; backup for loop counter (Xtmp - -)
+004F   0A47           00069         goto    getB0                   ; carry on
+0050   0800           00070         retlw   0                       ; go back
+                      00071 ;
+                      00072 ; set the address in Buffer,Buffer+1 Hi Lo
+                      00073 ;
+0051                  00074 rsetAddr
+                      00075         sndByte 068h                    ; set address low cmd
+0051   0C68               M         movlw   068h
+0052   0958               M         call    rsndFrame
+0053   0211           00076         movf    AddressLo,w             ; low address
+0054   0958           00077         call    rsndFrame               ; send that frame
+                      00078         sndByte 069h                    ; set address high cmd
+0055   0C69               M         movlw   069h
+0056   0958               M         call    rsndFrame
+0057   0210           00079         movf    AddressHi,w             ; high address and drop into  ...
+                      00080 
+0058                  00081 rsndFrame
+0058   0037           00082         movwf   Wr1                     ; save entry data
+                      00083         Tclr    sDat                    ; set data to output
+0059   0C38               M         movlw   mask & ~( 1 << sDat )
+005A   0006               M         TRIS    GPIO
+005B   0217           00084         movf    Wr1,w
+                      00085         mmakepar                        ; create parity bit in carry
+MPASM 5.64               T10F200PROGCAP2.ASM   1-4-2017  13:33:47         PAGE  6
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+005C   0034               M         movwf   Dtmp
+005D   0394               M         swapf   Dtmp,w
+005E   0194               M         xorwf   Dtmp,w
+005F   0034               M         movwf   Dtmp
+0060   0C41               M         movlw   041h
+0061   01F4               M         addwf   Dtmp,f
+0062   0C7C               M         movlw   07ch
+0063   0134               M         iorwf   Dtmp,f
+0064   0C02               M         movlw   02h
+0065   01F4               M         addwf   Dtmp,f
+0066   0374               M         rlf     Dtmp,f
+0067   0074           00086         clrf    Dtmp                    ; high byte of 12 bit word
+0068   0374           00087         rlf     Dtmp,f                  ; shift parity in
+0069   0377           00088         rlf     Wr1,f
+006A   0374           00089         rlf     Dtmp,f                  ; bit 0 of Wr1=start bit=0
+006B   0554           00090         bsf     Dtmp,2
+006C   0574           00091         bsf     Dtmp,3                  ; two stopbits
+006D   0C0C           00092         movlw   12                      ; bit counter
+006E   0035           00093         movwf   Otemp                   ; save it here
+006F   0617           00094 sndb0   btfsc   Wr1,0                   ; is it a 0 ?
+0070   0526           00095         bsf     GPIO,sDat               ; nope send a one
+0071   0717           00096         btfss   Wr1,0                   ; or a 1 ?
+0072   0426           00097         bcf     GPIO,sDat               ; so send a 0
+0073   0406           00098         bcf     GPIO,sClk               ; set Clock LOW
+0074   0506           00099         bsf     GPIO,sClk               ; set Clock HIGH
+0075   0334           00100         rrf     Dtmp,f                  ; shift next bits ...
+0076   0337           00101         rrf     Wr1,f                   ; ... as a 16 bit lump
+0077   02F5           00102         decfsz  Otemp,f                 ; backup bit counter
+0078   0A6F           00103         goto    sndb0                   ; loop on
+0079   0800           00104         retlw   0                       ; back to whence we came
+                      00105 ;
+                      00106 ;
+                      00107 ;
+                      00108 
+                      00109 ;
+                      00110 ; send at least 16 high pulses to initaalise the line 
+                      00111 ;
+007A                  00112 rinitLine
+                      00113 xinitl  Tclr    sDat                    ; set data to OUTPUT
+007A   0C38               M         movlw   mask & ~( 1 << sDat )
+007B   0006               M         TRIS    GPIO
+007C   0C11           00114         movlw   17                      ; fro(i=0; I < 17; i++)
+007D   0034           00115         movwf   Dtmp                    ; counter
+007E   0526           00116         bsf     GPIO,sDat               ; set data line to one
+007F   0406           00117 do16    bcf     GPIO,sClk               ; set Clock LOW
+0080   0506           00118         bsf     GPIO,sClk               ; set Clock HIGH
+0081   02F4           00119         decfsz  Dtmp,f                  ; backup counters
+0082   0A7F           00120         goto    do16                    ; loop till done
+                      00121         sndByte 0e0h                    ; send init NVM Key
+0083   0CE0               M         movlw   0e0h
+0084   0958               M         call    rsndFrame
+                      00122         sndByte 0ffh                    ; ... plus the key
+0085   0CFF               M         movlw   0ffh
+MPASM 5.64               T10F200PROGCAP2.ASM   1-4-2017  13:33:47         PAGE  7
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+0086   0958               M         call    rsndFrame
+                      00123         sndByte 088h
+0087   0C88               M         movlw   088h
+0088   0958               M         call    rsndFrame
+                      00124         sndByte 0d8h
+0089   0CD8               M         movlw   0d8h
+008A   0958               M         call    rsndFrame
+                      00125         sndByte 0cdh
+008B   0CCD               M         movlw   0cdh
+008C   0958               M         call    rsndFrame
+                      00126         sndByte 045h
+008D   0C45               M         movlw   045h
+008E   0958               M         call    rsndFrame
+                      00127         sndByte 0abh
+008F   0CAB               M         movlw   0abh
+0090   0958               M         call    rsndFrame
+                      00128         sndByte 089h
+0091   0C89               M         movlw   089h
+0092   0958               M         call    rsndFrame
+0093   0C12           00129         movlw   012h
+0094   0A58           00130         goto    rsndFrame               ; get out via sending last byte
+                      00131         
+                      00132 ;
+                      00133 ; writeWord writes the word at DataHi,DataLo to AddressHi,AddressLo
+                      00134 ;
+0095                  00135 rwriteWord
+                      00136 wrt1    sndByte 0f3h
+0095   0CF3               M         movlw   0f3h
+0096   0958               M         call    rsndFrame
+                      00137         sndByte 01dh                    ; send a write command
+0097   0C1D               M         movlw   01dh
+0098   0958               M         call    rsndFrame
+                      00138         sndByte 064h
+0099   0C64               M         movlw   064h
+009A   0958               M         call    rsndFrame
+009B   0212           00139         movf    DataHi,w                        ; then dat HIGH LOW
+009C   0958           00140         call    rsndFrame
+                      00141 WrtHi   sndByte 064h
+009D   0C64               M         movlw   064h
+009E   0958               M         call    rsndFrame
+009F   0213           00142         movf    DataLo,w
+00A0   0958           00143         call    rsndFrame
+                      00144 Dunnit  sndByte 072h                    ; send read status command
+00A1   0C72               M         movlw   072h
+00A2   0958               M         call    rsndFrame
+00A3   0935           00145         call    rgetByte                        ; get status back
+00A4   06F7           00146         btfsc   RetCode,7               ; wait for command completion
+00A5   0AA1           00147         goto    Dunnit
+00A6   0800           00148         retlw   0                       ; done
+                      00149 ;
+                      00150 ; erase the page set by the caller
+                      00151 ;
+                      00152 reraPg  sndByte 0f3h                    ; send erase command
+MPASM 5.64               T10F200PROGCAP2.ASM   1-4-2017  13:33:47         PAGE  8
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+00A7   0CF3               M         movlw   0f3h
+00A8   0958               M         call    rsndFrame
+                      00153         sndByte 014h
+00A9   0C14               M         movlw   014h
+00AA   0958               M         call    rsndFrame
+00AB   0A9D           00154         goto    WrtHi                   ; ANY write to the high byte starts the page erase
+                      00155 
+                      00156 ;
+                      00157 ; rgetAddr read a 4 hex digit word to AddressHi,AddressLo
+                      00158 ;
+00AC                  00159 rgetAddr
+00AC   0C10           00160         movlw   AddressHi               ; address info goes here
+00AD                  00161 rget4Hex
+00AD   0024           00162         movwf   FSR                     ; Point FSR at Buffer (entry param)
+00AE   0076           00163         clrf    IP
+00AF   0060           00164 rget4H  clrf    INDF
+00B0   090B           00165 rget4H0 call    rinch                   ; read a byte into the buffer
+00B1   0C30           00166         movlw   '0'
+00B2   00B5           00167         subwf   Otemp,f
+00B3   0703           00168         skpc
+00B4   0AB0           00169         goto    rget4H0
+00B5   0C0A           00170         movlw   ':'-'0'
+00B6   0095           00171         subwf   Otemp,w
+00B7   0703           00172         skpc
+00B8   0AC3           00173         goto    ishex
+00B9   0C11           00174         movlw   'A'-'0'
+00BA   0095           00175         subwf   Otemp,w
+00BB   0703           00176         skpc
+00BC   0AB0           00177         goto    rget4H0
+00BD   0C17           00178         movlw   'G'-'0'
+00BE   0095           00179         subwf   Otemp,w
+00BF   0603           00180         skpnc
+00C0   0AB0           00181         goto    rget4H0
+00C1   0C07           00182         movlw   7
+00C2   00B5           00183         subwf   Otemp,f
+00C3   03A0           00184 ishex   swapf   INDF,f
+00C4   0215           00185         movf    Otemp,w
+00C5   0120           00186         iorwf   INDF,f
+00C6   02B6           00187         incf    IP,f
+00C7   0616           00188         btfsc   IP,0
+00C8   0AB0           00189         goto    rget4H0
+00C9   02A4           00190         incf    FSR,f                   ; bump ptr
+00CA   0604           00191         btfsc   FSR,0                   ; 0 ->1 -> 0 for two bytes ....
+00CB   0AAF           00192         goto    rget4H                  ; loop till done
+00CC   0800           00193         retlw   0
+                      00194 
+00CD   0C38           00195 Rst     movlw   mask                    ; set txbit and LED as output
+00CE   0006           00196         TRIS    GPIO
+00CF   0C06           00197         movlw   (~mask) & 03eh          ; 1 << sClk | 1 << txbit | 1 << sRst | 1 << sDat
+00D0   0026           00198         movwf   GPIO
+00D1   0CC0           00199         movlw   optval                  ; set option reg values
+00D2   0002           00200         option                          ; the set the option reg
+                      00201 main    Pchar   0ah                     ; do a newline
+MPASM 5.64               T10F200PROGCAP2.ASM   1-4-2017  13:33:47         PAGE  9
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+00D3   0C0A               M         movlw   0ah
+00D4   0920               M         call    routch
+00D5   0C23           00202         movlw   '#'
+00D6   0920           00203         call    routch
+00D7   090B           00204         call    rinch                   ; read a char
+00D8   0C49           00205         movlw   'I'
+00D9   0095           00206         subwf   Otemp,w
+00DA   0603           00207         skpnc
+00DB   0AD3           00208         goto    main
+00DC   0C41           00209         movlw   'A'
+00DD   00B5           00210         subwf   Otemp,f
+00DE   0703           00211         skpc
+00DF   0AD3           00212         goto    main
+00E0   0215           00213         movf    Otemp,w
+00E1   01E2           00214         addwf   PCL,f
+00E2   0AED           00215         goto    SetCmd                  ; Set A=Address
+00E3   097A           00216 ConCmd  call    rinitLine                       ;  B=Begin programming initialise TPI 
+00E4   0AD3           00217         goto    main                    ; C=not used
+00E5   0406           00218 DiscCmd bcf     GPIO,sRst               ;  D=Disconnect programming set reset line high (inverted)=disco
+                            nnect
+00E6   0AD3           00219         goto    main                    ; E not used
+00E7   0AFB           00220         goto    EraCmd                  ; f= Format (erase) current segment
+00E8   0AF0           00221         goto    RdCmd                   ; G=Get data from chip
+                      00222 ;
+                      00223 ; H=HexEdit (Write) data to current address
+                      00224 ;
+00E9   0C12           00225 WrtCmd  movlw   DataHi                  ; pointer to data
+00EA   09AD           00226         call    rget4Hex                        ; common entry point to read 2 bytes of data
+00EB   0995           00227         call    rwriteWord              ; write them to flash
+00EC   0AD3           00228         goto    main                    ; continue
+                      00229 ;
+                      00230 ; A Set Address to use 
+                      00231 ;
+00ED   09AC           00232 SetCmd  call    rgetAddr                        ; get a 2 byte address
+00EE   0951           00233         call    rsetAddr                        ; set address on chip
+00EF   0AD3           00234         goto    main
+                      00235 ;
+                      00236 ; G=Get Bytes read 2 bytes current address
+                      00237 ;
+00F0                  00238 RdCmd
+00F0   0933           00239         call    sndRx                   ; send a read byte command and increment pointer
+                      00240         Phex    RetCode
+00F1   0397               M         swapf   RetCode,w
+00F2   0902               M         call    rPnib
+00F3   0217               M         movf    RetCode,w
+00F4   0902               M         call    rPnib
+00F5   0933           00241         call    sndRx                   ; send a read byte command and increment pointer
+                      00242         Phex    RetCode
+00F6   0397               M         swapf   RetCode,w
+00F7   0902               M         call    rPnib
+00F8   0217               M         movf    RetCode,w
+00F9   0902               M         call    rPnib
+00FA   0AD3           00243         goto    main                    ; carry on
+MPASM 5.64               T10F200PROGCAP2.ASM   1-4-2017  13:33:47         PAGE 10
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+00FB                  00244 .;
+                      00245 ; F=Format (Erase) current segment
+                      00246 ;
+00FB   0511           00247 EraCmd  bsf     AddressLo,0             ; make the address the high byte
+00FC   0951           00248         call    rsetAddr                        ; set address on chip
+00FD   09A7           00249         call    reraPg                  ; erase the page
+00FE   0AD3           00250         goto    main
+                      00251         end
+MPASM 5.64               T10F200PROGCAP2.ASM   1-4-2017  13:33:47         PAGE 11
+
+
+SYMBOL TABLE
+  LABEL                             VALUE 
+
+.                                 000000FB
+AddressHi                         00000010
+AddressLo                         00000011
+B9600                             
+C                                 00000000
+CAL0                              00000001
+CAL1                              00000002
+CAL2                              00000003
+CAL3                              00000004
+CAL4                              00000005
+CAL5                              00000006
+CAL6                              00000007
+ConCmd                            000000E3
+DC                                00000001
+DataHi                            00000012
+DataLo                            00000013
+DiscCmd                           000000E5
+Dtmp                              00000014
+Dunnit                            000000A1
+EraCmd                            000000FB
+F                                 00000001
+FOSC4                             00000000
+FSR                               00000004
+GP0                               00000000
+GP1                               00000001
+GP2                               00000002
+GP3                               00000003
+GPIO                              00000006
+GPWUF                             00000007
+INDF                              00000000
+IP                                00000016
+NOT_GPPU                          00000006
+NOT_GPWU                          00000007
+NOT_PD                            00000003
+NOT_TO                            00000004
+OSCCAL                            00000005
+Otemp                             00000015
+PCL                               00000002
+PS0                               00000000
+PS1                               00000001
+PS2                               00000002
+PSA                               00000003
+Pchar                             
+Phex                              
+Ram                               00000010
+RdCmd                             000000F0
+RetCode                           00000017
+Rst                               000000CD
+STATUS                            00000003
+SetCmd                            000000ED
+Start                             00000000
+Stmp                              00000018
+T0CS                              00000005
+MPASM 5.64               T10F200PROGCAP2.ASM   1-4-2017  13:33:47         PAGE 12
+
+
+SYMBOL TABLE
+  LABEL                             VALUE 
+
+T0SE                              00000004
+TESTING                           
+TMR0                              00000001
+TRISIO0                           00000000
+TRISIO1                           00000001
+TRISIO2                           00000002
+TRISIO3                           00000003
+Tclr                              
+Tset                              
+W                                 00000000
+Wr1                               00000017
+WrtCmd                            000000E9
+WrtHi                             0000009D
+Xtmp                              00000019
+Z                                 00000002
+Ztmp                              0000001A
+_CONFIG                           00000FFF
+_CP_OFF                           00000FFF
+_CP_ON                            00000FF7
+_IDLOC0                           00000100
+_IDLOC1                           00000101
+_IDLOC2                           00000102
+_IDLOC3                           00000103
+_IntRC_OSC                        00000FFF
+_MCLRE_OFF                        00000FEF
+_MCLRE_ON                         00000FFF
+_OSC_IntRC                        00000FFF
+_WDTE_OFF                         00000FFB
+_WDTE_ON                          00000FFF
+_WDT_OFF                          00000FFB
+_WDT_ON                           00000FFF
+__10F200                          00000001
+delf                              00000020
+delh                              00000010
+do16                              0000007F
+getB0                             00000047
+getBlp                            00000038
+in0                               0000000F
+in1                               00000012
+in2                               0000001F
+ishex                             000000C3
+main                              000000D3
+mask                              00000038
+mmakepar                          
+oc2                               00000027
+optval                            000000C0
+outch2                            00000023
+rPnib                             00000002
+reraPg                            000000A7
+rget4H                            000000AF
+rget4H0                           000000B0
+rget4Hex                          000000AD
+rgetAddr                          000000AC
+MPASM 5.64               T10F200PROGCAP2.ASM   1-4-2017  13:33:47         PAGE 13
+
+
+SYMBOL TABLE
+  LABEL                             VALUE 
+
+rgetByte                          00000035
+rinch                             0000000B
+rinitLine                         0000007A
+routch                            00000020
+rsetAddr                          00000051
+rsndFrame                         00000058
+rwriteWord                        00000095
+rxbit                             00000002
+sClk                              00000000
+sDat                              00000001
+sRst                              00000000
+sndByte                           
+sndRx                             00000033
+sndb0                             0000006F
+txbit                             00000002
+wrt1                              00000095
+xinitl                            0000007A
+
+
+MEMORY USAGE MAP ('X' = Used,  '-' = Unused)
+
+0000 : XXXXXXXXXXXXXXXX XXXXXXXXXXXXXXXX XXXXXXXXXXXXXXXX XXXXXXXXXXXXXXXX
+0040 : XXXXXXXXXXXXXXXX XXXXXXXXXXXXXXXX XXXXXXXXXXXXXXXX XXXXXXXXXXXXXXXX
+0080 : XXXXXXXXXXXXXXXX XXXXXXXXXXXXXXXX XXXXXXXXXXXXXXXX XXXXXXXXXXXXXXXX
+00C0 : XXXXXXXXXXXXXXXX XXXXXXXXXXXXXXXX XXXXXXXXXXXXXXXX XXXXXXXXXXXXXXX-
+0FC0 : ---------------- ---------------- ---------------- ---------------X
+
+All other memory blocks unused.
+
+Program Memory Words Used:   255
+Program Memory Words Free:     1
+
+
+Errors   :     0
+Warnings :     0 reported,     0 suppressed
+Messages :     0 reported,     0 suppressed
+
+
