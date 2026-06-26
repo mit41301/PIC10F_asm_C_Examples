@@ -1,0 +1,4 @@
+_main: CODE, 13 0 82
+__initialization: ENTRY, 3 0 8
+_picinit: CODE, 95 0 36
+Total: 126

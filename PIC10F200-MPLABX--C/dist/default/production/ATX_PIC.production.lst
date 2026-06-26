@@ -1,0 +1,698 @@
+
+
+Microchip MPLAB XC8 Assembler V2.32 build 20210201212658 
+                                                                                               Tue Jun 28 23:46:42 2022
+
+Microchip MPLAB XC8 C Compiler v2.32 (Free license) build 20210201212658 Og1 
+     1                           	processor	10F200
+     2                           	pagewidth 120
+     3                           	opt	flic
+     4                           	psect	idataBANK0,global,class=ENTRY,delta=2
+     5                           	psect	nvBANK0,global,class=BANK0,space=1,delta=1,noexec
+     6                           	psect	cinit,global,class=ENTRY,merge=1,delta=2
+     7                           	psect	bssBANK0,global,class=BANK0,space=1,delta=1,noexec
+     8                           	psect	dataBANK0,global,class=BANK0,space=1,delta=1,noexec
+     9                           	psect	cstackCOMMON,global,class=COMMON,space=1,delta=1,noexec
+    10                           	psect	cstackBANK0,global,class=BANK0,space=1,delta=1,noexec
+    11                           	psect	maintext,global,class=CODE,split=1,delta=2
+    12                           	psect	text1,local,class=CODE,merge=1,delta=2
+    13                           	psect	jmp_tab,global,class=ENTRY,delta=2
+    14                           	psect	idloc,global,abs,ovrld,class=IDLOC,space=5,delta=2,noexec
+    15                           	psect	config,global,abs,ovrld,class=CONFIG,space=4,delta=2,noexec
+    16                           	dabs	1,0x1C,4
+    17  0000                     
+    18                           ; Version 2.40
+    19                           ; Generated 06/12/2021 GMT
+    20                           ; 
+    21                           ; Copyright © 2021, Microchip Technology Inc. and its subsidiaries ("Microchip")
+    22                           ; All rights reserved.
+    23                           ; 
+    24                           ; This software is developed by Microchip Technology Inc. and its subsidiaries ("Microch
+      +                          ip").
+    25                           ; 
+    26                           ; Redistribution and use in source and binary forms, with or without modification, are
+    27                           ; permitted provided that the following conditions are met:
+    28                           ; 
+    29                           ;     1. Redistributions of source code must retain the above copyright notice, this lis
+      +                          t of
+    30                           ;        conditions and the following disclaimer.
+    31                           ; 
+    32                           ;     2. Redistributions in binary form must reproduce the above copyright notice, this 
+      +                          list
+    33                           ;        of conditions and the following disclaimer in the documentation and/or other
+    34                           ;        materials provided with the distribution. Publication is not required when
+    35                           ;        this file is used in an embedded application.
+    36                           ; 
+    37                           ;     3. Microchip's name may not be used to endorse or promote products derived from th
+      +                          is
+    38                           ;        software without specific prior written permission.
+    39                           ; 
+    40                           ; THIS SOFTWARE IS PROVIDED BY MICROCHIP "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES,
+    41                           ; INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS F
+      +                          OR
+    42                           ; PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL MICROCHIP BE LIABLE FOR ANY DIRECT, INDIREC
+      +                          T,
+    43                           ; INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING BUT NOT LIMITED TO
+    44                           ; PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA OR PROFITS; OR BUSINESS
+    45                           ; INTERRUPTION) HOWSOEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, ST
+      +                          RICT
+    46                           ; LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE U
+      +                          SE OF
+    47                           ; THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+    48                           ; 
+    49                           ; 
+    50                           ; Code-generator required, PIC10F200 Definitions
+    51                           ; 
+    52                           ; SFR Addresses
+    53  0000                     	;# 
+    54  0001                     	;# 
+    55  0002                     	;# 
+    56  0003                     	;# 
+    57  0004                     	;# 
+    58  0005                     	;# 
+    59  0006                     	;# 
+    60                           
+    61                           	psect	idataBANK0
+    62  0FD                     __pidataBANK0:
+    63                           
+    64                           ;initializer for _Switch_Type
+    65  0FD  0810               	retlw	16
+    66                           
+    67                           ;initializer for _Pwr_state
+    68  0FE  0801               	retlw	1
+    69                           
+    70                           	psect	nvBANK0
+    71  016                     __pnvBANK0:
+    72  016                     _temp:
+    73  016                     	ds	1
+    74  0006                     _GPIObitss	set	6
+    75  0001                     _TMR0	set	1
+    76  0006                     _GPIO	set	6
+    77  0006                     _TRISGPIO	set	6
+    78  0000                     _OPTION	set	0
+    79                           
+    80                           	psect	cinit
+    81  003                     start_initialization:	
+    82                           ; #config settings
+    83                           
+    84  003                     __initialization:
+    85                           
+    86                           ; Initialize objects allocated to BANK0
+    87  003  09FD               	fcall	__pidataBANK0	;fetch initializer
+    88  004  0034               	movwf	__pdataBANK0& (0+31)
+    89  005  09FE               	fcall	__pidataBANK0+1	;fetch initializer
+    90  006  0035               	movwf	(__pdataBANK0+1)& (0+31)
+    91                           
+    92                           ; Clear objects allocated to BANK0
+    93  007  0070               	clrf	__pbssBANK0& (0+31)
+    94  008  0071               	clrf	(__pbssBANK0+1)& (0+31)
+    95  009  0072               	clrf	(__pbssBANK0+2)& (0+31)
+    96  00A  0073               	clrf	(__pbssBANK0+3)& (0+31)
+    97  00B                     end_of_initialization:	
+    98                           ;End of C runtime variable initialization code
+    99                           
+   100  00B                     __end_of__initialization:
+   101  00B  0064               	clrf	4
+   102  00C  0A0D               	ljmp	_main	;jump to C main() function
+   103                           
+   104                           	psect	bssBANK0
+   105  010                     __pbssBANK0:
+   106  010                     _ButTimeOut:
+   107  010                     	ds	1
+   108  011                     _KeyPressTime:
+   109  011                     	ds	1
+   110  012                     _Tick_Freq:
+   111  012                     	ds	1
+   112  013                     _Tick_state:
+   113  013                     	ds	1
+   114                           
+   115                           	psect	dataBANK0
+   116  014                     __pdataBANK0:
+   117  014                     _Switch_Type:
+   118  014                     	ds	1
+   119  015                     _Pwr_state:
+   120  015                     	ds	1
+   121                           
+   122                           	psect	cstackCOMMON
+   123  000                     __pcstackCOMMON:
+   124  000                     ??_picinit:
+   125  000                     ??_main:	
+   126                           ; 1 bytes @ 0x0
+   127                           
+   128                           
+   129                           	psect	cstackBANK0
+   130  017                     __pcstackBANK0:	
+   131                           ; 1 bytes @ 0x0
+   132                           
+   133  017                     ?_picinit:
+   134  017                     ?_main:	
+   135                           ; 1 bytes @ 0x0
+   136                           
+   137  017                     main@tmr0_val:	
+   138                           ; 1 bytes @ 0x0
+   139                           
+   140                           
+   141                           ; 1 bytes @ 0x0
+   142  017                     	ds	1
+   143                           
+   144                           	psect	maintext
+   145  00D                     __pmaintext:	
+   146 ;;
+   147 ;;Main: autosize = 0, tempsize = 0, incstack = 0, save=0
+   148 ;;
+   149 ;; *************** function _main *****************
+   150 ;; Defined at:
+   151 ;;		line 110 in file "ATX_PIC.c"
+   152 ;; Parameters:    Size  Location     Type
+   153 ;;		None
+   154 ;; Auto vars:     Size  Location     Type
+   155 ;;  tmr0_val        1    0[BANK0 ] unsigned char 
+   156 ;; Return value:  Size  Location     Type
+   157 ;;                  1   35[None  ] void 
+   158 ;; Registers used:
+   159 ;;		wreg, fsr0l, fsr0h, status,2, status,0, btemp+3, pclath, cstack
+   160 ;; Tracked objects:
+   161 ;;		On entry : B00/0
+   162 ;;		On exit  : 0/0
+   163 ;;		Unchanged: 0/0
+   164 ;; Data sizes:     COMMON   BANK0
+   165 ;;      Params:         0       0
+   166 ;;      Locals:         0       1
+   167 ;;      Temps:          0       0
+   168 ;;      Totals:         0       1
+   169 ;;Total ram usage:        1 bytes
+   170 ;; Hardware stack levels required when called: 1
+   171 ;; This function calls:
+   172 ;;		_picinit
+   173 ;; This function is called by:
+   174 ;;		Startup code after reset
+   175 ;; This function uses a non-reentrant model
+   176 ;;
+   177                           
+   178                           
+   179                           ;psect for function _main
+   180  00D                     _main:
+   181  00D                     l667:	
+   182                           ;incstack = 0
+   183                           ; Regs used in _main: [wreg-fsr0h+status,2+status,0+btemp+3+pclath+cstack]
+   184                           
+   185                           
+   186                           ;ATX_PIC.c: 111:     unsigned char tmr0_val;;ATX_PIC.c: 112:     picinit();
+   187  00D  09FC               	fcall	entry__picinit
+   188  00E                     l669:
+   189                           
+   190                           ;ATX_PIC.c: 114:     {;ATX_PIC.c: 115:         tmr0_val=TMR0;
+   191  00E  0201               	movf	1,w	;volatile
+   192  00F  0037               	movwf	main@tmr0_val
+   193  010                     l671:
+   194                           
+   195                           ;ATX_PIC.c: 116:         if (tmr0_val==0)
+   196  010  0217               	movf	main@tmr0_val,w
+   197  011  0743               	btfss	3,2
+   198  012  0A14               	goto	u201
+   199  013  0A15               	goto	u200
+   200  014                     u201:
+   201  014  0A0E               	goto	l669
+   202  015                     u200:
+   203  015                     l673:
+   204                           
+   205                           ;ATX_PIC.c: 117:         {;ATX_PIC.c: 119:             Tick_state = !Tick_state;
+   206  015  0213               	movf	_Tick_state,w
+   207  016  0643               	btfsc	3,2
+   208  017  0A19               	goto	u211
+   209  018  0A1B               	goto	u210
+   210  019                     u211:
+   211  019  0C01               	movlw	1
+   212  01A  0A1C               	goto	u220
+   213  01B                     u210:
+   214  01B  0C00               	movlw	0
+   215  01C                     u220:
+   216  01C  0033               	movwf	_Tick_state
+   217  01D                     l675:
+   218                           
+   219                           ;ATX_PIC.c: 120:             GPIObitss.TICK_OUT_SW = Tick_state;
+   220  01D  0213               	movf	_Tick_state,w
+   221  01E  003F               	movwf	btemp+3
+   222  01F  031F               	rrf	btemp+3,w
+   223  020  0703               	skipc
+   224  021  0426               	bcf	6,1	;volatile
+   225  022  0603               	skipnc
+   226  023  0526               	bsf	6,1	;volatile
+   227  024                     l677:
+   228                           
+   229                           ;ATX_PIC.c: 121:             TMR0=Tick_Freq;
+   230  024  0212               	movf	_Tick_Freq,w
+   231  025  0021               	movwf	1	;volatile
+   232  026                     l679:
+   233                           
+   234                           ;ATX_PIC.c: 123:            if (GPIObitss.ON_OFF==0 & Switch_Type == 0x10 )
+   235  026  0666               	btfsc	6,3	;volatile
+   236  027  0A29               	goto	u231
+   237  028  0A2A               	goto	u230
+   238  029                     u231:
+   239  029  0A32               	goto	l685
+   240  02A                     u230:
+   241  02A                     l681:
+   242  02A  0C10               	movlw	16
+   243  02B  0194               	xorwf	_Switch_Type,w
+   244  02C  0743               	btfss	3,2
+   245  02D  0A2F               	goto	u241
+   246  02E  0A30               	goto	u240
+   247  02F                     u241:
+   248  02F  0A32               	goto	l685
+   249  030                     u240:
+   250  030                     l683:
+   251                           
+   252                           ;ATX_PIC.c: 124:             {;ATX_PIC.c: 125:                  GPIObitss.PWR_ON = 0;
+   253  030  0446               	bcf	6,2	;volatile
+   254                           
+   255                           ;ATX_PIC.c: 126:             }
+   256  031  0A4C               	goto	l697
+   257  032                     l685:
+   258  032  0766               	btfss	6,3	;volatile
+   259  033  0A35               	goto	u251
+   260  034  0A36               	goto	u250
+   261  035                     u251:
+   262  035  0A3E               	goto	l691
+   263  036                     u250:
+   264  036                     l687:
+   265  036  0C10               	movlw	16
+   266  037  0194               	xorwf	_Switch_Type,w
+   267  038  0743               	btfss	3,2
+   268  039  0A3B               	goto	u261
+   269  03A  0A3C               	goto	u260
+   270  03B                     u261:
+   271  03B  0A3E               	goto	l691
+   272  03C                     u260:
+   273  03C                     l689:
+   274                           
+   275                           ;ATX_PIC.c: 128:             {;ATX_PIC.c: 129:                 GPIObitss.PWR_ON = 1;
+   276  03C  0546               	bsf	6,2	;volatile
+   277                           
+   278                           ;ATX_PIC.c: 130:             }
+   279  03D  0A4C               	goto	l697
+   280  03E                     l691:
+   281  03E  0666               	btfsc	6,3	;volatile
+   282  03F  0A41               	goto	u271
+   283  040  0A42               	goto	u270
+   284  041                     u271:
+   285  041  0A4C               	goto	l697
+   286  042                     u270:
+   287  042                     l693:
+   288  042  0C24               	movlw	36
+   289  043  0194               	xorwf	_Switch_Type,w
+   290  044  0743               	btfss	3,2
+   291  045  0A47               	goto	u281
+   292  046  0A48               	goto	u280
+   293  047                     u281:
+   294  047  0A4C               	goto	l697
+   295  048                     u280:
+   296  048                     l695:
+   297                           
+   298                           ;ATX_PIC.c: 132:             {;ATX_PIC.c: 133:                 KeyPressTime++;
+   299  048  0C01               	movlw	1
+   300  049  003F               	movwf	btemp+3
+   301  04A  021F               	movf	btemp+3,w
+   302  04B  01F1               	addwf	_KeyPressTime,f
+   303  04C                     l697:
+   304                           
+   305                           ;ATX_PIC.c: 135:             if (KeyPressTime > 50)
+   306  04C  0C33               	movlw	51
+   307  04D  0091               	subwf	_KeyPressTime,w
+   308  04E  0703               	skipc
+   309  04F  0A51               	goto	u291
+   310  050  0A52               	goto	u290
+   311  051                     u291:
+   312  051  0A5E               	goto	l43
+   313  052                     u290:
+   314  052                     l699:
+   315                           
+   316                           ;ATX_PIC.c: 136:             {;ATX_PIC.c: 137:                 ButTimeOut++;
+   317  052  0C01               	movlw	1
+   318  053  003F               	movwf	btemp+3
+   319  054  021F               	movf	btemp+3,w
+   320  055  01F0               	addwf	_ButTimeOut,f
+   321  056                     l701:
+   322                           
+   323                           ;ATX_PIC.c: 138:                 if (Pwr_state==1)
+   324  056  00D5               	decf	_Pwr_state,w
+   325  057  0743               	btfss	3,2
+   326  058  0A5A               	goto	u301
+   327  059  0A5B               	goto	u300
+   328  05A                     u301:
+   329  05A  0A5D               	goto	l705
+   330  05B                     u300:
+   331  05B                     l703:
+   332                           
+   333                           ;ATX_PIC.c: 139:                 {;ATX_PIC.c: 140:                     GPIObitss.PWR_ON 
+      +                          = 0;
+   334  05B  0446               	bcf	6,2	;volatile
+   335                           
+   336                           ;ATX_PIC.c: 141:                 }
+   337  05C  0A5E               	goto	l43
+   338  05D                     l705:
+   339                           
+   340                           ;ATX_PIC.c: 143:                 {;ATX_PIC.c: 144:                     GPIObitss.PWR_ON 
+      +                          = 1;
+   341  05D  0546               	bsf	6,2	;volatile
+   342  05E                     l43:	
+   343                           ;ATX_PIC.c: 146:              }
+   344                           
+   345                           
+   346                           ;ATX_PIC.c: 148:             if (GPIObitss.ON_OFF==1 & KeyPressTime>50 & ButTimeOut>30)
+   347  05E  0766               	btfss	6,3	;volatile
+   348  05F  0A61               	goto	u311
+   349  060  0A62               	goto	u310
+   350  061                     u311:
+   351  061  0A0E               	goto	l669
+   352  062                     u310:
+   353  062                     l707:
+   354  062  0C33               	movlw	51
+   355  063  0091               	subwf	_KeyPressTime,w
+   356  064  0703               	skipc
+   357  065  0A67               	goto	u321
+   358  066  0A68               	goto	u320
+   359  067                     u321:
+   360  067  0A0E               	goto	l669
+   361  068                     u320:
+   362  068                     l709:
+   363  068  0C1F               	movlw	31
+   364  069  0090               	subwf	_ButTimeOut,w
+   365  06A  0703               	skipc
+   366  06B  0A6D               	goto	u331
+   367  06C  0A6E               	goto	u330
+   368  06D                     u331:
+   369  06D  0A0E               	goto	l669
+   370  06E                     u330:
+   371  06E                     l711:
+   372                           
+   373                           ;ATX_PIC.c: 149:             {;ATX_PIC.c: 150:                if (Pwr_state==1)
+   374  06E  00D5               	decf	_Pwr_state,w
+   375  06F  0743               	btfss	3,2
+   376  070  0A72               	goto	u341
+   377  071  0A73               	goto	u340
+   378  072                     u341:
+   379  072  0A75               	goto	l715
+   380  073                     u340:
+   381  073                     l713:
+   382                           
+   383                           ;ATX_PIC.c: 151:                 {;ATX_PIC.c: 152:                     Pwr_state=0;
+   384  073  0075               	clrf	_Pwr_state
+   385                           
+   386                           ;ATX_PIC.c: 153:                 }
+   387  074  0A77               	goto	l717
+   388  075                     l715:
+   389                           
+   390                           ;ATX_PIC.c: 155:                 {;ATX_PIC.c: 156:                     Pwr_state=1;
+   391  075  0075               	clrf	_Pwr_state
+   392  076  02B5               	incf	_Pwr_state,f
+   393  077                     l717:
+   394                           
+   395                           ;ATX_PIC.c: 159:                 KeyPressTime=0;
+   396  077  0071               	clrf	_KeyPressTime
+   397  078                     l719:
+   398                           
+   399                           ;ATX_PIC.c: 160:                 ButTimeOut=0;
+   400  078  0070               	clrf	_ButTimeOut
+   401  079  0A0E               	goto	l669
+   402  07A  0A02               	ljmp	start
+   403  07B                     __end_of_main:
+   404                           
+   405                           	psect	text1
+   406  07B                     __ptext1:	
+   407 ;; *************** function _picinit *****************
+   408 ;; Defined at:
+   409 ;;		line 74 in file "ATX_PIC.c"
+   410 ;; Parameters:    Size  Location     Type
+   411 ;;		None
+   412 ;; Auto vars:     Size  Location     Type
+   413 ;;		None
+   414 ;; Return value:  Size  Location     Type
+   415 ;;                  1   26[None  ] void 
+   416 ;; Registers used:
+   417 ;;		wreg, fsr0l, fsr0h, status,2, status,0
+   418 ;; Tracked objects:
+   419 ;;		On entry : 0/0
+   420 ;;		On exit  : 0/0
+   421 ;;		Unchanged: 0/0
+   422 ;; Data sizes:     COMMON   BANK0
+   423 ;;      Params:         0       0
+   424 ;;      Locals:         0       0
+   425 ;;      Temps:          0       0
+   426 ;;      Totals:         0       0
+   427 ;;Total ram usage:        0 bytes
+   428 ;; Hardware stack levels used: 1
+   429 ;; This function calls:
+   430 ;;		Nothing
+   431 ;; This function is called by:
+   432 ;;		_main
+   433 ;; This function uses a non-reentrant model
+   434 ;;
+   435                           
+   436                           
+   437                           ;psect for function _picinit
+   438  07B                     _picinit:
+   439  07B                     l641:
+   440                           
+   441                           ;ATX_PIC.c: 76:     OPTION = 0x85;
+   442  07B  0C85               	movlw	133
+   443  07C  0002               	option
+   444                           
+   445                           ;ATX_PIC.c: 77:     TRISGPIO = 0xB;
+   446  07D  0C0B               	movlw	11
+   447  07E  0006               	tris	6
+   448  07F                     l643:
+   449                           
+   450                           ;ATX_PIC.c: 78:     GPIO=0x7;
+   451  07F  0C07               	movlw	7
+   452  080  0026               	movwf	6	;volatile
+   453  081                     l645:
+   454                           
+   455                           ;ATX_PIC.c: 79:     TMR0 = 0;
+   456  081  0061               	clrf	1	;volatile
+   457  082                     l647:
+   458                           
+   459                           ;ATX_PIC.c: 81:     temp=(GPIObitss.FREQ_SEL);
+   460  082  0C00               	movlw	0
+   461  083  0606               	btfsc	6,0	;volatile
+   462  084  0C01               	movlw	1
+   463  085  0036               	movwf	_temp
+   464  086                     l649:
+   465                           
+   466                           ;ATX_PIC.c: 82:     if (temp==1)
+   467  086  00D6               	decf	_temp,w
+   468  087  0743               	btfss	3,2
+   469  088  0A8A               	goto	u181
+   470  089  0A8B               	goto	u180
+   471  08A                     u181:
+   472  08A  0A8E               	goto	l653
+   473  08B                     u180:
+   474  08B                     l651:
+   475                           
+   476                           ;ATX_PIC.c: 83:     {;ATX_PIC.c: 84:         Tick_Freq = 126;
+   477  08B  0C7E               	movlw	126
+   478  08C  0032               	movwf	_Tick_Freq
+   479                           
+   480                           ;ATX_PIC.c: 85:     }
+   481  08D  0A90               	goto	l655
+   482  08E                     l653:
+   483                           
+   484                           ;ATX_PIC.c: 87:     {;ATX_PIC.c: 88:         Tick_Freq = 100;
+   485  08E  0C64               	movlw	100
+   486  08F  0032               	movwf	_Tick_Freq
+   487  090                     l655:
+   488                           
+   489                           ;ATX_PIC.c: 90:     temp=(GPIObitss.TICK_OUT_SW);
+   490  090  0C00               	movlw	0
+   491  091  0626               	btfsc	6,1	;volatile
+   492  092  0C01               	movlw	1
+   493  093  0036               	movwf	_temp
+   494  094                     l657:
+   495                           
+   496                           ;ATX_PIC.c: 91:     if (temp==1)
+   497  094  00D6               	decf	_temp,w
+   498  095  0743               	btfss	3,2
+   499  096  0A98               	goto	u191
+   500  097  0A99               	goto	u190
+   501  098                     u191:
+   502  098  0A9C               	goto	l661
+   503  099                     u190:
+   504  099                     l659:
+   505                           
+   506                           ;ATX_PIC.c: 92:     {;ATX_PIC.c: 93:         Switch_Type = 0x24;
+   507  099  0C24               	movlw	36
+   508  09A  0034               	movwf	_Switch_Type
+   509                           
+   510                           ;ATX_PIC.c: 94:     }
+   511  09B  0A9E               	goto	l663
+   512  09C                     l661:
+   513                           
+   514                           ;ATX_PIC.c: 96:     {;ATX_PIC.c: 97:         Switch_Type = 0x10;
+   515  09C  0C10               	movlw	16
+   516  09D  0034               	movwf	_Switch_Type
+   517  09E                     l663:
+   518                           
+   519                           ;ATX_PIC.c: 99:      TRISGPIO = 0x9;
+   520  09E  0C09               	movlw	9
+   521  09F  0006               	tris	6
+   522  0A0                     l665:
+   523                           
+   524                           ;ATX_PIC.c: 101:     TMR0=Tick_Freq;
+   525  0A0  0212               	movf	_Tick_Freq,w
+   526  0A1  0021               	movwf	1	;volatile
+   527  0A2                     l31:
+   528  0A2  0800               	retlw	0
+   529  0A3                     __end_of_picinit:
+   530  001C                     btemp	set	28	;btemp
+   531  001C                     wtemp0	set	28
+   532  001E                     wtemp1	set	30
+   533  001C                     ttemp0	set	28
+   534  001C                     ltemp0	set	28
+   535                           
+   536                           	psect	jmp_tab
+   537  0FC                     __pjmp_tab:	
+   538                           ;incstack = 0
+   539                           ; Regs used in _picinit: [wreg-fsr0h+status,2+status,0]
+   540                           
+   541  0FC                     entry__picinit:
+   542  0FC  0A7B               	ljmp	_picinit
+   543                           
+   544                           	psect	idloc
+   545                           
+   546                           ;Config register IDLOC0 @ 0x100
+   547                           ;	unspecified, using default values
+   548  0100                     	org	256
+   549  0100  0FFF               	dw	4095
+   550                           
+   551                           ;Config register IDLOC1 @ 0x101
+   552                           ;	unspecified, using default values
+   553  0101                     	org	257
+   554  0101  0FFF               	dw	4095
+   555                           
+   556                           ;Config register IDLOC2 @ 0x102
+   557                           ;	unspecified, using default values
+   558  0102                     	org	258
+   559  0102  0FFF               	dw	4095
+   560                           
+   561                           ;Config register IDLOC3 @ 0x103
+   562                           ;	unspecified, using default values
+   563  0103                     	org	259
+   564  0103  0FFF               	dw	4095
+   565                           
+   566                           	psect	config
+   567                           
+   568                           ;Config register CONFIG @ 0xFFF
+   569                           ;	Oscillator
+   570                           ;	OSC = IntRC, This is the only option. It is here for backward compatibility
+   571                           ;	Watchdog Timer
+   572                           ;	WDTE = OFF, WDT disabled
+   573                           ;	Code Protect
+   574                           ;	CP = OFF, Code protection off
+   575                           ;	Master Clear Enable
+   576                           ;	MCLRE = OFF, GP3/MCLR pin fuction is digital I/O, MCLR internally tied to VDD
+   577  0FFF                     	org	4095
+   578  0FFF  0FEB               	dw	4075
+
+Data Sizes:
+    Strings     0
+    Constant    0
+    Data        2
+    BSS         4
+    Persistent  1
+    Stack       0
+
+Auto Spaces:
+    Space          Size  Autos    Used
+    COMMON            0      0       0
+    BANK0            14      1       8
+
+Pointer List with Targets:
+
+    None.
+
+Critical Paths under _main in COMMON
+
+    None.
+
+Critical Paths under _main in BANK0
+
+    None.
+
+Call Graph Tables:
+
+ ---------------------------------------------------------------------------------
+ (Depth) Function   	        Calls       Base Space   Used Autos Params    Refs
+ ---------------------------------------------------------------------------------
+ (0) _main                                                 1     1      0      23
+                                              0 BANK0      1     1      0
+                            _picinit
+ ---------------------------------------------------------------------------------
+ (1) _picinit                                              0     0      0       0
+ ---------------------------------------------------------------------------------
+ Estimated maximum stack depth 1
+ ---------------------------------------------------------------------------------
+
+ Call Graph Graphs:
+
+ _main (ROOT)
+   _picinit
+
+ Address spaces:
+Name               Size   Autos  Total    Cost      Usage
+BITCOMMON            0      0       0       0        0.0%
+NULL                 0      0       0       0        0.0%
+CODE                 0      0       0       0        0.0%
+BITSFR0              0      0       0       1        0.0%
+SFR0                 0      0       0       1        0.0%
+COMMON               0      0       0       1        0.0%
+STACK                0      0       0       2        0.0%
+BANK0                E      1       8       3       57.1%
+ABS                  0      0       8       4        0.0%
+DATA                 0      0       8       5        0.0%
+BITBANK0             E      0       0       6        0.0%
+
+
+Microchip Technology PIC Macro Assembler V2.32 build 20210201212658 
+Symbol Table                                                                                   Tue Jun 28 23:46:42 2022
+
+                     l31 00A2                       l43 005E                       fsr 0004  
+                    l701 0056                      l711 006E                      l703 005B  
+                    l641 007B                      l713 0073                      l705 005D  
+                    l651 008B                      l643 007F                      l715 0075  
+                    l707 0062                      l661 009C                      l653 008E  
+                    l645 0081                      l717 0077                      l709 0068  
+                    l663 009E                      l655 0090                      l647 0082  
+                    l719 0078                      l671 0010                      l665 00A0  
+                    l657 0094                      l649 0086                      l681 002A  
+                    l673 0015                      l659 0099                      l691 003E  
+                    l683 0030                      l675 001D                      l667 000D  
+                    l693 0042                      l685 0032                      l677 0024  
+                    l669 000E                      l695 0048                      l687 0036  
+                    l679 0026                      l689 003C                      l697 004C  
+                    l699 0052                      u200 0015                      u201 0014  
+                    u210 001B                      u211 0019                      u300 005B  
+                    u220 001C                      u301 005A                      u310 0062  
+                    u230 002A                      u311 0061                      u231 0029  
+                    u320 0068                      u240 0030                      u321 0067  
+                    u241 002F                      u330 006E                      u250 0036  
+                    u331 006D                      u251 0035                      u180 008B  
+                    u340 0073                      u260 003C                      u181 008A  
+                    u341 0072                      u261 003B                      u190 0099  
+                    u270 0042                      u191 0098                      u271 0041  
+                    u280 0048                      u281 0047                      u290 0052  
+                    u291 0051                     _GPIO 0006                     _TMR0 0001  
+                   _main 000D                     _temp 0016                     btemp 001C  
+                   start 0002                    ?_main 0017             main@tmr0_val 0017  
+             _ButTimeOut 0010          __end_of_picinit 00A3                    ltemp0 001C  
+                  ttemp0 001C                    status 0003                    wtemp0 001C  
+                  wtemp1 001E          __initialization 0003             __end_of_main 007B  
+                 ??_main 0000                   _OPTION 0000               _Tick_state 0013  
+              ??_picinit 0000  __end_of__initialization 000B           __pcstackCOMMON 0000  
+           __pidataBANK0 00FD               __pbssBANK0 0010               __pmaintext 000D  
+                __ptext1 007B                  _picinit 007B     end_of_initialization 000B  
+              _GPIObitss 0006             _KeyPressTime 0011              _Switch_Type 0014  
+    start_initialization 0003                _Tick_Freq 0012              __pdataBANK0 0014  
+              _Pwr_state 0015                ___latbits 0000            __pcstackBANK0 0017  
+              __pnvBANK0 0016                __pjmp_tab 00FC                 ?_picinit 0017  
+               _TRISGPIO 0006         __size_of_picinit 0028            entry__picinit 00FC  
+          __size_of_main 006E  

@@ -1,0 +1,353 @@
+Version 4.0 HI-TECH Software Intermediate Code
+"308 C:/Program Files/Microchip/MPLABX/v6.00/packs/Microchip/PIC10-12Fxxx_DFP/1.5.61/xc8\pic\include\proc\pic10f200.h
+[; ;C:/Program Files/Microchip/MPLABX/v6.00/packs/Microchip/PIC10-12Fxxx_DFP/1.5.61/xc8\pic\include\proc\pic10f200.h: 308: extern volatile __control unsigned char OPTION __attribute__((address(0x000)));
+[v _OPTION `VWuc ~T0 @X0 0 e@0 ]
+"316
+[; ;C:/Program Files/Microchip/MPLABX/v6.00/packs/Microchip/PIC10-12Fxxx_DFP/1.5.61/xc8\pic\include\proc\pic10f200.h: 316: extern volatile __control unsigned char TRISGPIO __attribute__((address(0x006)));
+[v _TRISGPIO `VWuc ~T0 @X0 0 e@6 ]
+"270
+[; ;C:/Program Files/Microchip/MPLABX/v6.00/packs/Microchip/PIC10-12Fxxx_DFP/1.5.61/xc8\pic\include\proc\pic10f200.h: 270: extern volatile unsigned char GPIO __attribute__((address(0x006)));
+[v _GPIO `Vuc ~T0 @X0 0 e@6 ]
+"73
+[; ;C:/Program Files/Microchip/MPLABX/v6.00/packs/Microchip/PIC10-12Fxxx_DFP/1.5.61/xc8\pic\include\proc\pic10f200.h: 73: extern volatile unsigned char TMR0 __attribute__((address(0x001)));
+[v _TMR0 `Vuc ~T0 @X0 0 e@1 ]
+"38 ATX_PIC.c
+[; ;ATX_PIC.c: 38:     struct {
+[s S23 :1 `uc 1 :1 `uc 1 :1 `uc 1 :1 `uc 1 ]
+[n S23 . FREQ_SEL TICK_OUT_SW PWR_ON ON_OFF ]
+"37
+[; ;ATX_PIC.c: 37: typedef union {
+[u S22 `S23 1 ]
+[n S22 . . ]
+"46
+[; ;ATX_PIC.c: 46: extern volatile GPIObits_type GPIObitss __attribute__((address(0x006)));
+[v _GPIObitss `VS22 ~T0 @X0 0 e@6 ]
+[p mainexit ]
+"55 C:/Program Files/Microchip/MPLABX/v6.00/packs/Microchip/PIC10-12Fxxx_DFP/1.5.61/xc8\pic\include\proc\pic10f200.h
+[; ;C:/Program Files/Microchip/MPLABX/v6.00/packs/Microchip/PIC10-12Fxxx_DFP/1.5.61/xc8\pic\include\proc\pic10f200.h: 55: __asm("INDF equ 00h");
+[; <" INDF equ 00h ;# ">
+"75
+[; ;C:/Program Files/Microchip/MPLABX/v6.00/packs/Microchip/PIC10-12Fxxx_DFP/1.5.61/xc8\pic\include\proc\pic10f200.h: 75: __asm("TMR0 equ 01h");
+[; <" TMR0 equ 01h ;# ">
+"95
+[; ;C:/Program Files/Microchip/MPLABX/v6.00/packs/Microchip/PIC10-12Fxxx_DFP/1.5.61/xc8\pic\include\proc\pic10f200.h: 95: __asm("PCL equ 02h");
+[; <" PCL equ 02h ;# ">
+"115
+[; ;C:/Program Files/Microchip/MPLABX/v6.00/packs/Microchip/PIC10-12Fxxx_DFP/1.5.61/xc8\pic\include\proc\pic10f200.h: 115: __asm("STATUS equ 03h");
+[; <" STATUS equ 03h ;# ">
+"181
+[; ;C:/Program Files/Microchip/MPLABX/v6.00/packs/Microchip/PIC10-12Fxxx_DFP/1.5.61/xc8\pic\include\proc\pic10f200.h: 181: __asm("FSR equ 04h");
+[; <" FSR equ 04h ;# ">
+"201
+[; ;C:/Program Files/Microchip/MPLABX/v6.00/packs/Microchip/PIC10-12Fxxx_DFP/1.5.61/xc8\pic\include\proc\pic10f200.h: 201: __asm("OSCCAL equ 05h");
+[; <" OSCCAL equ 05h ;# ">
+"272
+[; ;C:/Program Files/Microchip/MPLABX/v6.00/packs/Microchip/PIC10-12Fxxx_DFP/1.5.61/xc8\pic\include\proc\pic10f200.h: 272: __asm("GPIO equ 06h");
+[; <" GPIO equ 06h ;# ">
+"26 ATX_PIC.c
+[p x WDTE=OFF   CP  =  OFF   OSC=IntRC   MCLRE  =  OFF ]
+"61
+[; ;ATX_PIC.c: 61: unsigned char Tick_state=0;
+[v _Tick_state `uc ~T0 @X0 1 e ]
+[i _Tick_state
+-> -> 0 `i `uc
+]
+"62
+[; ;ATX_PIC.c: 62: unsigned char Tick_Freq=0;
+[v _Tick_Freq `uc ~T0 @X0 1 e ]
+[i _Tick_Freq
+-> -> 0 `i `uc
+]
+"63
+[; ;ATX_PIC.c: 63: unsigned char temp=0;
+[v _temp `uc ~T0 @X0 1 e ]
+[i _temp
+-> -> 0 `i `uc
+]
+"64
+[; ;ATX_PIC.c: 64: unsigned char Pwr_state=1;
+[v _Pwr_state `uc ~T0 @X0 1 e ]
+[i _Pwr_state
+-> -> 1 `i `uc
+]
+"65
+[; ;ATX_PIC.c: 65: unsigned char Switch_Type=0x10;
+[v _Switch_Type `uc ~T0 @X0 1 e ]
+[i _Switch_Type
+-> -> 16 `i `uc
+]
+"66
+[; ;ATX_PIC.c: 66: unsigned char KeyPressTime=0;
+[v _KeyPressTime `uc ~T0 @X0 1 e ]
+[i _KeyPressTime
+-> -> 0 `i `uc
+]
+"67
+[; ;ATX_PIC.c: 67: unsigned char ButTimeOut=0;
+[v _ButTimeOut `uc ~T0 @X0 1 e ]
+[i _ButTimeOut
+-> -> 0 `i `uc
+]
+"74
+[; ;ATX_PIC.c: 74: void picinit(void)
+[v _picinit `(v ~T0 @X0 1 ef ]
+"75
+[; ;ATX_PIC.c: 75: {
+{
+[e :U _picinit ]
+[f ]
+"76
+[; ;ATX_PIC.c: 76:     OPTION = 0x85;
+[e = _OPTION -> -> 133 `i `uc ]
+"77
+[; ;ATX_PIC.c: 77:     TRISGPIO = 0xB;
+[e = _TRISGPIO -> -> 11 `i `uc ]
+"78
+[; ;ATX_PIC.c: 78:     GPIO=0x7;
+[e = _GPIO -> -> 7 `i `uc ]
+"79
+[; ;ATX_PIC.c: 79:     TMR0 = 0;
+[e = _TMR0 -> -> 0 `i `uc ]
+"81
+[; ;ATX_PIC.c: 81:     temp=(GPIObitss.FREQ_SEL);
+[e = _temp . . _GPIObitss 0 0 ]
+"82
+[; ;ATX_PIC.c: 82:     if (temp==1)
+[e $ ! == -> _temp `i -> 1 `i 25  ]
+"83
+[; ;ATX_PIC.c: 83:     {
+{
+"84
+[; ;ATX_PIC.c: 84:         Tick_Freq = 126;
+[e = _Tick_Freq -> -> 126 `i `uc ]
+"85
+[; ;ATX_PIC.c: 85:     }
+}
+[e $U 26  ]
+"86
+[; ;ATX_PIC.c: 86:     else
+[e :U 25 ]
+"87
+[; ;ATX_PIC.c: 87:     {
+{
+"88
+[; ;ATX_PIC.c: 88:         Tick_Freq = 100;
+[e = _Tick_Freq -> -> 100 `i `uc ]
+"89
+[; ;ATX_PIC.c: 89:     }
+}
+[e :U 26 ]
+"90
+[; ;ATX_PIC.c: 90:     temp=(GPIObitss.TICK_OUT_SW);
+[e = _temp . . _GPIObitss 0 1 ]
+"91
+[; ;ATX_PIC.c: 91:     if (temp==1)
+[e $ ! == -> _temp `i -> 1 `i 27  ]
+"92
+[; ;ATX_PIC.c: 92:     {
+{
+"93
+[; ;ATX_PIC.c: 93:         Switch_Type = 0x24;
+[e = _Switch_Type -> -> 36 `i `uc ]
+"94
+[; ;ATX_PIC.c: 94:     }
+}
+[e $U 28  ]
+"95
+[; ;ATX_PIC.c: 95:     else
+[e :U 27 ]
+"96
+[; ;ATX_PIC.c: 96:     {
+{
+"97
+[; ;ATX_PIC.c: 97:         Switch_Type = 0x10;
+[e = _Switch_Type -> -> 16 `i `uc ]
+"98
+[; ;ATX_PIC.c: 98:     }
+}
+[e :U 28 ]
+"99
+[; ;ATX_PIC.c: 99:      TRISGPIO = 0x9;
+[e = _TRISGPIO -> -> 9 `i `uc ]
+"101
+[; ;ATX_PIC.c: 101:     TMR0=Tick_Freq;
+[e = _TMR0 _Tick_Freq ]
+"103
+[; ;ATX_PIC.c: 103:     }
+[e :UE 24 ]
+}
+[v $root$_main `(v ~T0 @X0 0 e ]
+"110
+[; ;ATX_PIC.c: 110: void main(void) {
+[v _main `(v ~T0 @X0 1 ef ]
+{
+[e :U _main ]
+[f ]
+"111
+[; ;ATX_PIC.c: 111:     unsigned char tmr0_val;
+[v _tmr0_val `uc ~T0 @X0 1 a ]
+"112
+[; ;ATX_PIC.c: 112:     picinit();
+[e ( _picinit ..  ]
+"113
+[; ;ATX_PIC.c: 113:     while(1)
+[e :U 31 ]
+"114
+[; ;ATX_PIC.c: 114:     {
+{
+"115
+[; ;ATX_PIC.c: 115:         tmr0_val=TMR0;
+[e = _tmr0_val _TMR0 ]
+"116
+[; ;ATX_PIC.c: 116:         if (tmr0_val==0)
+[e $ ! == -> _tmr0_val `i -> 0 `i 33  ]
+"117
+[; ;ATX_PIC.c: 117:         {
+{
+"119
+[; ;ATX_PIC.c: 119:             Tick_state = !Tick_state;
+[e = _Tick_state -> -> ! != -> _Tick_state `i -> 0 `i `i `uc ]
+"120
+[; ;ATX_PIC.c: 120:             GPIObitss.TICK_OUT_SW = Tick_state;
+[e = . . _GPIObitss 0 1 _Tick_state ]
+"121
+[; ;ATX_PIC.c: 121:             TMR0=Tick_Freq;
+[e = _TMR0 _Tick_Freq ]
+"123
+[; ;ATX_PIC.c: 123:            if (GPIObitss.ON_OFF==0 & Switch_Type == 0x10 )
+[e $ ! & == -> . . _GPIObitss 0 3 `i -> 0 `i == -> _Switch_Type `i -> 16 `i 34  ]
+"124
+[; ;ATX_PIC.c: 124:             {
+{
+"125
+[; ;ATX_PIC.c: 125:                  GPIObitss.PWR_ON = 0;
+[e = . . _GPIObitss 0 2 -> -> 0 `i `uc ]
+"126
+[; ;ATX_PIC.c: 126:             }
+}
+[e $U 35  ]
+"127
+[; ;ATX_PIC.c: 127:             else if (GPIObitss.ON_OFF==1 & Switch_Type == 0x10 )
+[e :U 34 ]
+[e $ ! & == -> . . _GPIObitss 0 3 `i -> 1 `i == -> _Switch_Type `i -> 16 `i 36  ]
+"128
+[; ;ATX_PIC.c: 128:             {
+{
+"129
+[; ;ATX_PIC.c: 129:                 GPIObitss.PWR_ON = 1;
+[e = . . _GPIObitss 0 2 -> -> 1 `i `uc ]
+"130
+[; ;ATX_PIC.c: 130:             }
+}
+[e $U 37  ]
+"131
+[; ;ATX_PIC.c: 131:             else if (GPIObitss.ON_OFF==0 & Switch_Type == 0x24 )
+[e :U 36 ]
+[e $ ! & == -> . . _GPIObitss 0 3 `i -> 0 `i == -> _Switch_Type `i -> 36 `i 38  ]
+"132
+[; ;ATX_PIC.c: 132:             {
+{
+"133
+[; ;ATX_PIC.c: 133:                 KeyPressTime++;
+[e ++ _KeyPressTime -> -> 1 `i `uc ]
+"134
+[; ;ATX_PIC.c: 134:             }
+}
+[e :U 38 ]
+[e :U 37 ]
+[e :U 35 ]
+"135
+[; ;ATX_PIC.c: 135:             if (KeyPressTime > 50)
+[e $ ! > -> _KeyPressTime `i -> 50 `i 39  ]
+"136
+[; ;ATX_PIC.c: 136:             {
+{
+"137
+[; ;ATX_PIC.c: 137:                 ButTimeOut++;
+[e ++ _ButTimeOut -> -> 1 `i `uc ]
+"138
+[; ;ATX_PIC.c: 138:                 if (Pwr_state==1)
+[e $ ! == -> _Pwr_state `i -> 1 `i 40  ]
+"139
+[; ;ATX_PIC.c: 139:                 {
+{
+"140
+[; ;ATX_PIC.c: 140:                     GPIObitss.PWR_ON = 0;
+[e = . . _GPIObitss 0 2 -> -> 0 `i `uc ]
+"141
+[; ;ATX_PIC.c: 141:                 }
+}
+[e $U 41  ]
+"142
+[; ;ATX_PIC.c: 142:                 else
+[e :U 40 ]
+"143
+[; ;ATX_PIC.c: 143:                 {
+{
+"144
+[; ;ATX_PIC.c: 144:                     GPIObitss.PWR_ON = 1;
+[e = . . _GPIObitss 0 2 -> -> 1 `i `uc ]
+"145
+[; ;ATX_PIC.c: 145:                 }
+}
+[e :U 41 ]
+"146
+[; ;ATX_PIC.c: 146:              }
+}
+[e :U 39 ]
+"148
+[; ;ATX_PIC.c: 148:             if (GPIObitss.ON_OFF==1 & KeyPressTime>50 & ButTimeOut>30)
+[e $ ! & & == -> . . _GPIObitss 0 3 `i -> 1 `i > -> _KeyPressTime `i -> 50 `i > -> _ButTimeOut `i -> 30 `i 42  ]
+"149
+[; ;ATX_PIC.c: 149:             {
+{
+"150
+[; ;ATX_PIC.c: 150:                if (Pwr_state==1)
+[e $ ! == -> _Pwr_state `i -> 1 `i 43  ]
+"151
+[; ;ATX_PIC.c: 151:                 {
+{
+"152
+[; ;ATX_PIC.c: 152:                     Pwr_state=0;
+[e = _Pwr_state -> -> 0 `i `uc ]
+"153
+[; ;ATX_PIC.c: 153:                 }
+}
+[e $U 44  ]
+"154
+[; ;ATX_PIC.c: 154:                 else
+[e :U 43 ]
+"155
+[; ;ATX_PIC.c: 155:                 {
+{
+"156
+[; ;ATX_PIC.c: 156:                     Pwr_state=1;
+[e = _Pwr_state -> -> 1 `i `uc ]
+"157
+[; ;ATX_PIC.c: 157:                 }
+}
+[e :U 44 ]
+"159
+[; ;ATX_PIC.c: 159:                 KeyPressTime=0;
+[e = _KeyPressTime -> -> 0 `i `uc ]
+"160
+[; ;ATX_PIC.c: 160:                 ButTimeOut=0;
+[e = _ButTimeOut -> -> 0 `i `uc ]
+"161
+[; ;ATX_PIC.c: 161:             }
+}
+[e :U 42 ]
+"162
+[; ;ATX_PIC.c: 162:         }
+}
+[e :U 33 ]
+"163
+[; ;ATX_PIC.c: 163:     }
+}
+[e :U 30 ]
+[e $U 31  ]
+[e :U 32 ]
+"164
+[; ;ATX_PIC.c: 164: }
+[e :UE 29 ]
+}

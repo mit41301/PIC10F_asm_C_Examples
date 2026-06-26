@@ -1,0 +1,238 @@
+Microchip MPLAB XC8 Compiler V2.32
+
+Linker command line:
+
+--edf=C:\Program Files\Microchip\xc8\v2.32\pic\dat\en_msgs.txt -cn \
+  -h+dist/default/production\ATX_PIC.production.sym \
+  --cmf=dist/default/production\ATX_PIC.production.cmf -z -Q10F200 \
+  -oC:\Users\Ian\AppData\Local\Temp\xcAs680.4 --defsym=__MPLAB_BUILD=1 \
+  -Mdist/default/production/ATX_PIC.production.map -E1 -ver=XC8 Compiler \
+  --acfsm=1493 -ASTACK=018h-01Bh -pstack=STACK -ACODE=00h-0FEh \
+  -ASTRCODE=00h-0FEh -ASTRING=00h-0FEh -AENTRY=00h-0FFh-0FEh \
+  -ABANK0=010h-01Dh -ARAM=010h-01Dh -AABS1=010h-01Fh -ACOMMON=01Ch-01Fh \
+  -ASFR0=00h-0Fh -ACONFIG=0FFFh-0FFFh -DCONFIG=2 -AIDLOC=0100h-0103h \
+  -DIDLOC=2 -DCODE=2 -DSTRCODE=2 -DSTRING=2 -DCONST=2 -DENTRY=2 \
+  -preset_vec=0ffh,reset_wrap=0h,init,end_init,cinit,clrtext -ppowerup=CODE \
+  -pfunctab=ENTRY -pstrings=-STRING -k \
+  C:\Users\Ian\AppData\Local\Temp\xcAs680.o \
+  dist/default/production\ATX_PIC.production.o 
+
+Object code version is 3.11
+
+Machine type is 10F200
+
+
+
+                Name                               Link     Load   Length Selector   Space Scale
+C:\Users\Ian\AppData\Local\Temp\xcAs680.o
+                end_init                              2        2        1        0       0
+                reset_wrap                            0        0        2        0       0
+                reset_vec                            FF       FF        1      1FE       0
+                config                              FFF      FFF        1        0       4
+dist/default/production\ATX_PIC.production.o
+                cinit                                 3        3        A        0       0
+                config                              FFF      FFF        1        0       4
+                idloc                                 0        0      104        0       5
+                jmp_tab                              FC       FC        1      1F8       0
+                text1                                7B       7B       28       1A       0
+                maintext                              D        D       6E       1A       0
+                cstackBANK0                          17       17        1       10       1
+                dataBANK0                            14       14        2       10       1
+                bssBANK0                             10       10        4       10       1
+                nvBANK0                              16       16        1       10       1
+                idataBANK0                           FD       FD        2      1FA       0
+
+TOTAL           Name                               Link     Load   Length     Space
+        CLASS   STACK          
+
+        CLASS   CODE           
+                reset_vec                            FF       FF        1         0
+                text1                                7B       7B       28         0
+                maintext                              D        D       6E         0
+
+        CLASS   STRCODE        
+
+        CLASS   STRING         
+
+        CLASS   ENTRY          
+                end_init                              2        2        1         0
+                cinit                                 3        3        A         0
+                reset_wrap                            0        0        2         0
+                jmp_tab                              FC       FC        1         0
+                idataBANK0                           FD       FD        2         0
+
+        CLASS   BANK0          
+                cstackBANK0                          17       17        1         1
+                dataBANK0                            14       14        2         1
+                bssBANK0                             10       10        4         1
+                nvBANK0                              16       16        1         1
+
+        CLASS   RAM            
+
+        CLASS   ABS1           
+                abs_s1                               1C       1C        4         1
+
+        CLASS   COMMON         
+
+        CLASS   SFR0           
+
+        CLASS   CONFIG         
+                config                              FFF      FFF        1         4
+
+        CLASS   IDLOC          
+                idloc                                 0        0      104         5
+
+        CLASS   CONST          
+
+
+
+SEGMENTS        Name                           Load    Length   Top    Selector   Space  Class     Delta
+
+                reset_wrap                     000000  00000D  00000D         0       0  ENTRY       2
+                bssBANK0                       000010  000008  000018        10       1  BANK0       1
+                maintext                       00000D  000096  0000A3        1A       0  CODE        2
+                jmp_tab                        0000FC  000001  0000FD       1F8       0  ENTRY       2
+                idataBANK0                     0000FD  000002  0000FF       1FA       0  ENTRY       2
+                reset_vec                      0000FF  000001  000100       1FE       0  CODE        2
+
+
+UNUSED ADDRESS RANGES
+
+        Name                Unused          Largest block    Delta
+        BANK0            0018-001B              4           1
+        CODE             00A3-00FB             59           2
+        ENTRY            00A3-00FB             59           2
+        RAM              0018-001B              4           1
+        SFR0             0000-000F             10           1
+        STACK            0018-001B              4           1
+        STRCODE          00A3-00FB             59           2
+        STRING           00A3-00FB             59           2
+
+                                  Symbol Table
+
+_ButTimeOut              bssBANK0     0010
+_GPIO                    (abs)        0006
+_GPIObitss               (abs)        0006
+_KeyPressTime            bssBANK0     0011
+_OPTION                  (abs)        0000
+_Pwr_state               dataBANK0    0015
+_Switch_Type             dataBANK0    0014
+_TMR0                    (abs)        0001
+_TRISGPIO                (abs)        0006
+_Tick_Freq               bssBANK0     0012
+_Tick_state              bssBANK0     0013
+__Habs1                  abs1         0000
+__Hbank0                 bank0        0000
+__HbssBANK0              bssBANK0     0000
+__Hcinit                 cinit        000D
+__Hclrtext               clrtext      000D
+__Hcode                  code         0000
+__Hcommon                common       0000
+__Hconfig                config       1000
+__HcstackBANK0           cstackBANK0  0000
+__HcstackCOMMON          cstackCOMMON 0000
+__HdataBANK0             dataBANK0    0000
+__Hend_init              end_init     0003
+__Hfunctab               functab      0000
+__HidataBANK0            idataBANK0   0000
+__Hidloc                 idloc        0104
+__Hinit                  init         0002
+__Hjmp_tab               jmp_tab      0000
+__Hmaintext              maintext     0000
+__HnvBANK0               nvBANK0      0000
+__Hpowerup               powerup      0000
+__Hram                   ram          0000
+__Hreset_vec             reset_vec    0100
+__Hreset_wrap            reset_wrap   0002
+__Hsfr0                  sfr0         0000
+__Hspace_0               (abs)        0100
+__Hspace_1               (abs)        0018
+__Hspace_2               (abs)        0000
+__Hspace_4               (abs)        1FFF
+__Hstack                 stack        0000
+__Hstrings               strings      0000
+__Htext                  text         0000
+__Labs1                  abs1         0000
+__Lbank0                 bank0        0000
+__LbssBANK0              bssBANK0     0000
+__Lcinit                 cinit        0003
+__Lclrtext               clrtext      000D
+__Lcode                  code         0000
+__Lcommon                common       0000
+__Lconfig                config       0000
+__LcstackBANK0           cstackBANK0  0000
+__LcstackCOMMON          cstackCOMMON 0000
+__LdataBANK0             dataBANK0    0000
+__Lend_init              end_init     0002
+__Lfunctab               functab      0000
+__LidataBANK0            idataBANK0   0000
+__Lidloc                 idloc        0000
+__Linit                  init         0002
+__Ljmp_tab               jmp_tab      0000
+__Lmaintext              maintext     0000
+__LnvBANK0               nvBANK0      0000
+__Lpowerup               powerup      0000
+__Lram                   ram          0000
+__Lreset_vec             reset_vec    00FF
+__Lreset_wrap            reset_wrap   0000
+__Lsfr0                  sfr0         0000
+__Lspace_0               (abs)        0000
+__Lspace_1               (abs)        0000
+__Lspace_2               (abs)        0000
+__Lspace_4               (abs)        0000
+__Lstack                 stack        0000
+__Lstrings               strings      0000
+__Ltext                  text         0000
+__S0                     (abs)        00FF
+__S1                     (abs)        0018
+__S2                     (abs)        0000
+___int_sp                stack        0000
+___latbits               (abs)        0000
+___sp                    stack        0000
+___stackhi               (abs)        0000
+___stacklo               (abs)        0000
+__end_of__initialization cinit        000B
+__end_of_main            maintext     007B
+__end_of_picinit         text1        00A3
+__initialization         cinit        0003
+__pbssBANK0              bssBANK0     0010
+__pcstackBANK0           cstackBANK0  0017
+__pcstackCOMMON          cstackCOMMON 0000
+__pdataBANK0             dataBANK0    0014
+__pidataBANK0            idataBANK0   00FD
+__pjmp_tab               jmp_tab      00FC
+__pmaintext              maintext     000D
+__pnvBANK0               nvBANK0      0016
+__ptext1                 text1        007B
+__size_of_main           (abs)        0000
+__size_of_picinit        (abs)        0000
+_main                    maintext     000D
+_picinit                 text1        007B
+_temp                    nvBANK0      0016
+btemp                    (abs)        001C
+end_of_initialization    cinit        000B
+entry__picinit           jmp_tab      00FC
+ltemp0                   (abs)        001C
+main@tmr0_val            cstackBANK0  0017
+reset_vec                reset_vec    00FF
+start                    init         0002
+start_initialization     cinit        0003
+ttemp0                   (abs)        001C
+wtemp0                   (abs)        001C
+wtemp1                   (abs)        001E
+
+
+MODULE INFORMATION
+
+Module		Function		Class		Link	Load	Size
+shared
+		__initialization		ENTRY          	0003	0000	8
+
+shared estimated size: 8
+
+ATX_PIC.c
+		_main          		CODE           	000D	0000	110
+		_picinit       		CODE           	007B	0000	40
+
+ATX_PIC.c estimated size: 150
+
