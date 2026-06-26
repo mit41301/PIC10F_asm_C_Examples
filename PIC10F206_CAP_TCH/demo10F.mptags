@@ -1,0 +1,95 @@
+!_TAG_FILE_FORMAT	2	/extended format; --format=1 will not append ;" to lines/
+!_TAG_FILE_SORTED	1	/0=unsorted, 1=sorted, 2=foldcase/
+!_TAG_PROGRAM_AUTHOR	Darren Hiebert	/dhiebert@users.sourceforge.net/
+!_TAG_PROGRAM_NAME	Exuberant Ctags	//
+!_TAG_PROGRAM_URL	http://ctags.sourceforge.net	/official site/
+!_TAG_PROGRAM_VERSION	5.5.4	//
+!_TAG_REVISION_NAME	MCHPTags	//
+!_TAG_REVISION_VERSION	6.0.1	//
+C	C:\PIC Projects\10F Demo\P10F206.INC	68;"	q	line:68
+CAL0	C:\PIC Projects\10F Demo\P10F206.INC	89;"	q	line:89
+CAL1	C:\PIC Projects\10F Demo\P10F206.INC	88;"	q	line:88
+CAL2	C:\PIC Projects\10F Demo\P10F206.INC	87;"	q	line:87
+CAL3	C:\PIC Projects\10F Demo\P10F206.INC	86;"	q	line:86
+CAL4	C:\PIC Projects\10F Demo\P10F206.INC	85;"	q	line:85
+CAL5	C:\PIC Projects\10F Demo\P10F206.INC	84;"	q	line:84
+CAL6	C:\PIC Projects\10F Demo\P10F206.INC	83;"	q	line:83
+CMCON0	C:\PIC Projects\10F Demo\P10F206.INC	58;"	q	line:58
+CMPON	C:\PIC Projects\10F Demo\P10F206.INC	104;"	q	line:104
+CMPOUT	C:\PIC Projects\10F Demo\P10F206.INC	100;"	q	line:100
+CNREF	C:\PIC Projects\10F Demo\P10F206.INC	105;"	q	line:105
+CPREF	C:\PIC Projects\10F Demo\P10F206.INC	106;"	q	line:106
+CWUF	C:\PIC Projects\10F Demo\P10F206.INC	63;"	q	line:63
+DC	C:\PIC Projects\10F Demo\P10F206.INC	67;"	q	line:67
+F	C:\PIC Projects\10F Demo\P10F206.INC	47;"	q	line:47
+FOSC4	C:\PIC Projects\10F Demo\P10F206.INC	90;"	q	line:90
+FSR	C:\PIC Projects\10F Demo\P10F206.INC	55;"	q	line:55
+GP0	C:\PIC Projects\10F Demo\P10F206.INC	93;"	q	line:93
+GP1	C:\PIC Projects\10F Demo\P10F206.INC	94;"	q	line:94
+GP2	C:\PIC Projects\10F Demo\P10F206.INC	95;"	q	line:95
+GP3	C:\PIC Projects\10F Demo\P10F206.INC	96;"	q	line:96
+GPIO	C:\PIC Projects\10F Demo\P10F206.INC	57;"	q	line:57
+GPWUF	C:\PIC Projects\10F Demo\P10F206.INC	62;"	q	line:62
+INDF	C:\PIC Projects\10F Demo\P10F206.INC	51;"	q	line:51
+NOT_CMPT0CS	C:\PIC Projects\10F Demo\P10F206.INC	103;"	q	line:103
+NOT_COUTEN	C:\PIC Projects\10F Demo\P10F206.INC	101;"	q	line:101
+NOT_CWU	C:\PIC Projects\10F Demo\P10F206.INC	107;"	q	line:107
+NOT_GPPU	C:\PIC Projects\10F Demo\P10F206.INC	73;"	q	line:73
+NOT_GPWU	C:\PIC Projects\10F Demo\P10F206.INC	72;"	q	line:72
+NOT_PD	C:\PIC Projects\10F Demo\P10F206.INC	65;"	q	line:65
+NOT_TO	C:\PIC Projects\10F Demo\P10F206.INC	64;"	q	line:64
+OSCCAL	C:\PIC Projects\10F Demo\P10F206.INC	56;"	q	line:56
+PCL	C:\PIC Projects\10F Demo\P10F206.INC	53;"	q	line:53
+POL	C:\PIC Projects\10F Demo\P10F206.INC	102;"	q	line:102
+PS0	C:\PIC Projects\10F Demo\P10F206.INC	79;"	q	line:79
+PS1	C:\PIC Projects\10F Demo\P10F206.INC	78;"	q	line:78
+PS2	C:\PIC Projects\10F Demo\P10F206.INC	77;"	q	line:77
+PSA	C:\PIC Projects\10F Demo\P10F206.INC	76;"	q	line:76
+STATUS	C:\PIC Projects\10F Demo\P10F206.INC	54;"	q	line:54
+T0CS	C:\PIC Projects\10F Demo\P10F206.INC	74;"	q	line:74
+T0SE	C:\PIC Projects\10F Demo\P10F206.INC	75;"	q	line:75
+TMR0	C:\PIC Projects\10F Demo\P10F206.INC	52;"	q	line:52
+W	C:\PIC Projects\10F Demo\P10F206.INC	46;"	q	line:46
+Z	C:\PIC Projects\10F Demo\P10F206.INC	66;"	q	line:66
+_CP_OFF	C:\PIC Projects\10F Demo\P10F206.INC	127;"	q	line:127
+_CP_ON	C:\PIC Projects\10F Demo\P10F206.INC	126;"	q	line:126
+_IntRC_OSC	C:\PIC Projects\10F Demo\P10F206.INC	130;"	q	line:130
+_MCLRE_OFF	C:\PIC Projects\10F Demo\P10F206.INC	125;"	q	line:125
+_MCLRE_ON	C:\PIC Projects\10F Demo\P10F206.INC	124;"	q	line:124
+_WDT_OFF	C:\PIC Projects\10F Demo\P10F206.INC	129;"	q	line:129
+_WDT_ON	C:\PIC Projects\10F Demo\P10F206.INC	128;"	q	line:128
+avdepth	C:\PIC Projects\10F Demo\10Ftouch.asm	39;"	q	line:39
+average	C:\PIC Projects\10F Demo\10Ftouch.asm	147;"	l	line:147
+checkdifference	C:\PIC Projects\10F Demo\10Ftouch.asm	218;"	l	line:218
+delay	C:\PIC Projects\10F Demo\10Ftouch.asm	127;"	l	line:127
+divideby2pwrn	C:\PIC Projects\10F Demo\10Ftouch.asm	199;"	l	line:199
+evaldifference	C:\PIC Projects\10F Demo\10Ftouch.asm	243;"	l	line:243
+finish_loop	C:\PIC Projects\10F Demo\10Ftouch.asm	425;"	l	line:425
+gatedtime	C:\PIC Projects\10F Demo\10Ftouch.asm	37;"	q	line:37
+getfrequency	C:\PIC Projects\10F Demo\10Ftouch.asm	274;"	l	line:274
+hopover	C:\PIC Projects\10F Demo\10Ftouch.asm	165;"	l	line:165
+hopover2	C:\PIC Projects\10F Demo\10Ftouch.asm	189;"	l	line:189
+hysteresis	C:\PIC Projects\10F Demo\10Ftouch.asm	53;"	q	line:53
+init	C:\PIC Projects\10F Demo\10Ftouch.asm	85;"	l	line:85
+jumpbackaftersleep	C:\PIC Projects\10F Demo\10Ftouch.asm	73;"	l	line:73
+jumpinit	C:\PIC Projects\10F Demo\10Ftouch.asm	77;"	l	line:77
+keydown	C:\PIC Projects\10F Demo\Vars.inc	47;"	q	line:47
+lockavg	C:\PIC Projects\10F Demo\Vars.inc	48;"	q	line:48
+main	C:\PIC Projects\10F Demo\10Ftouch.asm	363;"	l	line:363
+mainloop	C:\PIC Projects\10F Demo\10Ftouch.asm	382;"	l	line:382
+measureprescaler	C:\PIC Projects\10F Demo\10Ftouch.asm	317;"	l	line:317
+nooverflow	C:\PIC Projects\10F Demo\10Ftouch.asm	336;"	l	line:336
+oneshotdone	C:\PIC Projects\10F Demo\Vars.inc	50;"	q	line:50
+output	C:\PIC Projects\10F Demo\Vars.inc	44;"	q	line:44
+react_keydown	C:\PIC Projects\10F Demo\10Ftouch.asm	395;"	l	line:395
+react_keyup	C:\PIC Projects\10F Demo\10Ftouch.asm	398;"	l	line:398
+reset	C:\PIC Projects\10F Demo\10Ftouch.asm	62;"	l	line:62
+results	C:\PIC Projects\10F Demo\10Ftouch.asm	258;"	l	line:258
+shift1	C:\PIC Projects\10F Demo\10Ftouch.asm	202;"	l	line:202
+sleeping	C:\PIC Projects\10F Demo\Vars.inc	49;"	q	line:49
+triphi_prx	C:\PIC Projects\10F Demo\10Ftouch.asm	46;"	q	line:46
+triphi_tch	C:\PIC Projects\10F Demo\10Ftouch.asm	50;"	q	line:50
+triplo_prx	C:\PIC Projects\10F Demo\10Ftouch.asm	45;"	q	line:45
+triplo_tch	C:\PIC Projects\10F Demo\10Ftouch.asm	49;"	q	line:49
+wait	C:\PIC Projects\10F Demo\10Ftouch.asm	129;"	l	line:129
+wake_from_sleep	C:\PIC Projects\10F Demo\10Ftouch.asm	440;"	l	line:440

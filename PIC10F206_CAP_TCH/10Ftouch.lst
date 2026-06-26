@@ -1,0 +1,714 @@
+MPASM  5.15                      10FTOUCH.ASM   5-20-2008  16:12:10         PAGE  1
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+                      00001 ;********************************************************
+                      00002 ;* file: 10ftouch.asm                           ver 1.2 *
+                      00003 ;* auth: m. flipse                                      *
+                      00004 ;* date:                                                *
+                      00005 ;*
+                      00006 ;* modf: T. Perme
+                      00007 ;* date: 24 March 2008
+                      00008 ;* desc: 
+                      00009 ;*
+                      00010 ;* Software License Agreement
+                      00011 ;*
+                      00012 ;* The software supplied herewith by Microchip Technology
+                      00013 ;* Incorporated (the "Company") is intended and supplied to you, the
+                      00014 ;* Company’s customer, for use solely and exclusively on Microchip
+                      00015 ;* products. The software is owned by the Company and/or its supplier,
+                      00016 ;* and is protected under applicable copyright laws. All rights are
+                      00017 ;* reserved. Any use in violation of the foregoing restrictions may
+                      00018 ;* subject the user to criminal sanctions under applicable laws, as
+                      00019 ;* well as to civil liability for the breach of the terms and
+                      00020 ;* conditions of this license.
+                      00021 ;*
+                      00022 ;* THIS SOFTWARE IS PROVIDED IN AN "AS IS" CONDITION. NO WARRANTIES,
+                      00023 ;* WHETHER EXPRESS, IMPLIED OR STATUTORY, INCLUDING, BUT NOT LIMITED
+                      00024 ;* TO, IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
+                      00025 ;* PARTICULAR PURPOSE APPLY TO THIS SOFTWARE. THE COMPANY SHALL NOT,
+                      00026 ;* IN ANY CIRCUMSTANCES, BE LIABLE FOR SPECIAL, INCIDENTAL OR
+                      00027 ;* CONSEQUENTIAL DAMAGES, FOR ANY REASON WHATSOEVER.
+                      00028 ;*
+                      00029 ;********************************************************
+                      00030 
+                      00031         PROCESSOR PIC10F206
+                      00032         RADIX   DEC
+                      00033 
+                      00034         INCLUDE <P10F206.INC>
+                      00001         LIST
+                      00002 ; P10F206.INC  Standard Header File, Version 1.01    Microchip Technology, Inc.
+                      00134         LIST
+                      00035         INCLUDE "Vars.inc"
+                      00001         LIST
+                      00002 
+                      00003 ; VARS.INC  INCLUDE FILE CONTAINING 
+                      00004 ;           DECLARATIONS AND MACROS
+                      00005 ;       NOLIST
+                      00006 
+                      00007 ;*******************************************************
+                      00008 ;*                                                     *
+                      00009 ;*                USED REGISTERS                       *
+                      00010 ;*                                                     *
+                      00011 ;*******************************************************
+                      00012 
+                      00013         CBLOCK  0X08
+  00000008            00014         TEMP1
+  00000009            00015         TEMP2
+MPASM  5.15                      10FTOUCH.ASM   5-20-2008  16:12:10         PAGE  2
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+                      00016 
+  0000000A            00017         TXREG
+                      00018         
+  0000000B            00019         FREQHI
+  0000000C            00020         FREQLO
+                      00021 
+  0000000D            00022         AVERAGEHI
+  0000000E            00023         AVERAGELO
+  0000000F            00024         AVERAGEFRACTION
+                      00025 
+  00000010            00026         AVHITEMP
+  00000011            00027         AVLOTEMP
+                      00028 
+  00000012            00029         DIFFERENCEHI
+  00000013            00030         DIFFERENCELO
+                      00031 
+  00000014            00032         T0PRESCALER
+                      00033         
+  00000015            00034         USERFLAG
+                      00035         ENDC
+                      00036 
+                      00037 ;*******************************************************
+                      00038 ;*                                                     *
+                      00039 ;*                BIT DEFINITIONS                      *
+                      00040 ;*                                                     *
+                      00041 ;*******************************************************
+                      00042 
+                      00043 ; bit definitions in gpio
+  00000001            00044 OUTPUT                  EQU .1
+                      00045 
+                      00046 ; bit definitions in userflag
+  00000000            00047 KEYDOWN                 EQU .0
+  00000001            00048 LOCKAVG                 EQU .1      ; lock the averaging mechanism during continuous touch
+  00000003            00049 SLEEPING                EQU     .3              ; for use in going to and waking from sleep
+  00000004            00050 ONESHOTDONE             EQU .4          ; for use in seeing if one shot trigger output has happened - se
+                            t on press, clr on release
+                      00051 
+                      00052          LIST
+                      00036 
+  00000021            00037 GATEDTIME       EQU     .33             ; time in msec that is used to measure the frequency
+                      00038 
+  00000005            00039 AVDEPTH         EQU     .5              ; averaging depth
+                      00040                                         ;    2 ^ (n-1) x oldvalue + newvalue
+                      00041                                         ; = ---------------------------------
+                      00042                                         ;               (2 ^ n)
+                      00043 
+                      00044 ; For Proximity
+  00000010            00045 TRIPLO_PRX      EQU     .16             ; difference between average and current
+  00000000            00046 TRIPHI_PRX      EQU     .0              ; frequency value for a key to be detected. (512 counts)
+                      00047                                                                         ; Smaller values have a more sen
+                            sitive trip (good for proximity)
+                      00048 ; For Touch
+  00000032            00049 TRIPLO_TCH      EQU     .50             ; difference between average and current
+MPASM  5.15                      10FTOUCH.ASM   5-20-2008  16:12:10         PAGE  3
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+  00000001            00050 TRIPHI_TCH      EQU     .1              ; frequency value for a key to be detected. (512 counts)
+                      00051                                                                         ; Smaller values have a more sen
+                            sitive trip (good for proximity)
+                      00052 
+  000000C8            00053 HYSTERESIS      EQU     .200            ; constant that is used to lower the averagevalue
+                      00054 
+                      00055                                         ; when continuous touch is enabled
+                      00056 
+0FFF   0FEF           00057         __CONFIG  _INTRC_OSC & _WDT_ON & _MCLRE_OFF & _CP_OFF
+                      00058         
+                      00059 
+                      00060 
+0000                  00061         ORG     .0                      ; reset vector
+0000                  00062 RESET
+0000   0025           00063         MOVWF   OSCCAL              ; calibrate internal oscillator
+                      00064 
+                      00065                 ; If waking from intentional sleep, return back to post-sleep command
+                      00066                 ; CWUF = 0, GPWUF = 0, TO = 0, PO = 0        STATUS BITS for wake from WDT
+                      00067 ;               movf    STATUS, w
+                      00068 ;               andlw   b'11111000'                     ; and off ALU status bits to zero
+                      00069 ;               btfsc   STATUS, Z                       ; check if all bits are zero, branch accordingly
+                      00070 ;               goto    jumpbackaftersleep      ; all zero
+                      00071 ;               goto    jumpinit                        ; non-zero
+                      00072 
+0001                  00073 JUMPBACKAFTERSLEEP:
+                      00074 ;               clrwdt                                          ; Clr wdt, resetting PO and TO to 1 in s
+                            tatus reg
+                      00075 ;               goto    wake_from_sleep
+                      00076                 
+0001                  00077 JUMPINIT:               
+0001   0903           00078         CALL    INIT                            ;  init the device if starting from power-up
+0002   0A90           00079         GOTO    MAIN
+                      00080 
+                      00081 ;********************************************************
+                      00082 ;* subroutine init                                      *
+                      00083 ;********************************************************
+                      00084 ;{
+0003                  00085 INIT    
+0003   0CF7           00086         MOVLW   B'11110111'
+                      00087               ;   ||||||||_ ps0
+                      00088               ;   |||||||__ ps1
+                      00089               ;   ||||||___ ps2   set prescaler to 1:256
+                      00090               ;   |||||____ psa   prescaler assigned to tmr0
+                      00091               ;   ||||_____ t0se  increment on high to low
+                      00092               ;   |||______ t0cs  transition on t0cki
+                      00093               ;   ||_______ #gppu pull-ups disabled
+                      00094               ;   |________ #gpwu wake-up on pin change disabled
+0004   0002           00095         OPTION
+                      00096 
+0005   0C0B           00097         MOVLW   B'00001011'
+                      00098               ;   ||||||||_ #cwu    wake-up on comp change disabled
+                      00099               ;   |||||||__ cpref   pos ref is cin+
+                      00100               ;   ||||||___ cnref   neg ref is internal 0.6V reference
+MPASM  5.15                      10FTOUCH.ASM   5-20-2008  16:12:10         PAGE  4
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+                      00101               ;   |||||____ cmpon   comparator on
+                      00102               ;   ||||_____ cmpt0cs comparator output used as tmr0 clock
+                      00103               ;   |||______ pol     output is inverted
+                      00104               ;   ||_______ #couten output is placed on cout pin
+                      00105               ;   |________ cmpout  -read only bit-
+0006   0027           00106         MOVWF   CMCON0
+                      00107 
+0007   0CF9           00108         MOVLW   B'11111001'     ; set gp1 and gp2 as an output
+0008   0006           00109         TRIS    GPIO
+                      00110 
+0009   006D           00111         CLRF    AVERAGEHI
+000A   006E           00112         CLRF    AVERAGELO
+000B   006F           00113         CLRF    AVERAGEFRACTION
+                      00114         
+000C   0075           00115         CLRF    USERFLAG
+                      00116 
+000D   0800           00117         RETLW   .0
+                      00118 ;}
+                      00119 
+                      00120 ;********************************************************
+                      00121 ;* subroutine delay                                     *
+                      00122 ;* descr: causes a timing delay in mSecs                *
+                      00123 ;*                                                      *
+                      00124 ;* in:    w - value in mSecs                            *
+                      00125 ;********************************************************
+                      00126 ;{
+000E                  00127 DELAY
+000E   0028           00128         MOVWF   TEMP1
+000F                  00129 WAIT
+000F   0CF9           00130         MOVLW   .249
+0010   0029           00131         MOVWF   TEMP2
+0011   0004           00132            CLRWDT                               ; instead of nop, use clrwdt to clrwdt while awake
+0012   02E9           00133            DECFSZ  TEMP2                ; all other code is much much less than 18ms (WDT timeout) when 
+                            not delaying
+0013   0A11           00134            GOTO    $-2
+                      00135 
+0014   02E8           00136         DECFSZ  TEMP1
+0015   0A0F           00137         GOTO    WAIT
+0016   0800           00138         RETLW   .0
+                      00139 ;}
+                      00140 ;********************************************************
+                      00141 ;* subroutine: average
+                      00142 ;* descr: 
+                      00143 ;*
+                      00144 ;* in:    freqhi, freqlo                                *
+                      00145 ;********************************************************
+                      00146 ;{
+0017                  00147 AVERAGE
+0017   020D           00148         MOVF    AVERAGEHI,W
+0018   0030           00149         MOVWF   AVHITEMP
+0019   020E           00150         MOVF    AVERAGELO,W
+001A   0031           00151         MOVWF   AVLOTEMP
+001B   0069           00152         CLRF    TEMP2           ; make a copy of the original value
+MPASM  5.15                      10FTOUCH.ASM   5-20-2008  16:12:10         PAGE  5
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+                      00153 
+001C   0940           00154         CALL    DIVIDEBY2PWRN   ; divide the copy by 2^n
+                      00155 ;******
+001D   0209           00156         MOVF    TEMP2,W
+001E   00AF           00157         SUBWF   AVERAGEFRACTION ; and subtract the result from the original
+001F   0603           00158         BTFSC   STATUS,C
+0020   0A26           00159         GOTO    HOPOVER
+0021   00EE           00160         DECF    AVERAGELO
+0022   0CFF           00161         MOVLW   .255
+0023   018E           00162         XORWF   AVERAGELO,W
+0024   0643           00163         BTFSC   STATUS,Z
+0025   00ED           00164         DECF    AVERAGEHI           
+0026                  00165 HOPOVER
+0026   0211           00166         MOVF    AVLOTEMP,W
+0027   00AE           00167         SUBWF   AVERAGELO
+0028   0703           00168         BTFSS   STATUS,C
+0029   00ED           00169         DECF    AVERAGEHI
+                      00170 
+002A   0210           00171         MOVF    AVHITEMP,W
+002B   00AD           00172         SUBWF   AVERAGEHI       ; average - 1/(2^n)
+                      00173 ;******
+002C   020B           00174         MOVF    FREQHI,W
+002D   0030           00175         MOVWF   AVHITEMP
+002E   020C           00176         MOVF    FREQLO,W
+002F   0031           00177         MOVWF   AVLOTEMP        ; make a copy of the original value
+0030   0069           00178         CLRF    TEMP2
+                      00179 
+0031   0940           00180         CALL    DIVIDEBY2PWRN   ; divide by 2^n
+                      00181 
+0032   0209           00182         MOVF    TEMP2,W
+0033   01EF           00183         ADDWF   AVERAGEFRACTION
+0034   0703           00184         BTFSS   STATUS,C
+0035   0A39           00185         GOTO    HOPOVER2
+0036   02AE           00186         INCF    AVERAGELO
+0037   0643           00187         BTFSC   STATUS,Z
+0038   02AD           00188         INCF    AVERAGEHI
+0039                  00189 HOPOVER2
+0039   0211           00190         MOVF    AVLOTEMP,W
+003A   01EE           00191         ADDWF   AVERAGELO
+003B   0603           00192         BTFSC   STATUS,C
+003C   02AD           00193         INCF    AVERAGEHI
+003D   0210           00194         MOVF    AVHITEMP,W
+003E   01ED           00195         ADDWF   AVERAGEHI
+                      00196 
+003F   0800           00197         RETLW   .0
+                      00198 
+0040                  00199 DIVIDEBY2PWRN
+0040   0C05           00200         MOVLW   AVDEPTH
+0041   0028           00201         MOVWF   TEMP1
+0042                  00202 SHIFT1
+0042   0403           00203         BCF     STATUS,C
+0043   0330           00204         RRF     AVHITEMP
+0044   0331           00205         RRF     AVLOTEMP
+MPASM  5.15                      10FTOUCH.ASM   5-20-2008  16:12:10         PAGE  6
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+0045   0329           00206         RRF     TEMP2
+0046   02E8           00207         DECFSZ  TEMP1
+0047   0A42           00208         GOTO    SHIFT1
+0048   0800           00209         RETLW   .0
+                      00210 ;}
+                      00211 ;********************************************************
+                      00212 ;* subroutine: checkdifference                          *
+                      00213 ;* descr: subtracts actual value from average           *
+                      00214 ;*                                                      *
+                      00215 ;* out:   freqhi:freqlo  with frequency                 *
+                      00216 ;********************************************************
+                      00217 ;{
+0049                  00218 CHECKDIFFERENCE
+0049   020D           00219         MOVF    AVERAGEHI,W
+004A   0032           00220         MOVWF   DIFFERENCEHI
+004B   020E           00221         MOVF    AVERAGELO,W
+004C   0033           00222         MOVWF   DIFFERENCELO    ; make a copy of the averagevalue
+                      00223 
+004D   020C           00224         MOVF    FREQLO,W
+004E   00B3           00225         SUBWF   DIFFERENCELO
+004F   0703           00226         BTFSS   STATUS,C
+0050   00F2           00227         DECF    DIFFERENCEHI
+0051   020B           00228         MOVF    FREQHI,W
+0052   00B2           00229         SUBWF   DIFFERENCEHI    ; averagevalue - currentvalue
+                      00230 
+0053   0603           00231         BTFSC   STATUS,C        ; is the difference negative?
+0054   0A5D           00232         GOTO    EVALDIFFERENCE  ; no positive, check if it exceeds the trip point
+0055   020B           00233         MOVF    FREQHI,W        ; yes, key is released
+0056   002D           00234         MOVWF   AVERAGEHI       ; average should follow actual value
+0057   020C           00235         MOVF    FREQLO,W
+0058   002E           00236         MOVWF   AVERAGELO
+0059   0072           00237         CLRF    DIFFERENCEHI
+005A   0073           00238         CLRF    DIFFERENCELO
+005B   0415           00239         BCF     USERFLAG,KEYDOWN
+                      00240 
+005C   0800           00241         RETLW   .0
+                      00242 
+005D                  00243 EVALDIFFERENCE
+005D   0415           00244         BCF     USERFLAG,KEYDOWN
+                      00245 
+005E   0C01           00246                 MOVLW   TRIPHI_TCH
+005F   0666           00247                 BTFSC   GPIO, 3
+0060   0C00           00248         MOVLW   TRIPHI_PRX
+0061   0092           00249         SUBWF   DIFFERENCEHI,W
+0062   0743           00250         BTFSS   STATUS,Z        ; are hi bytes equal?
+0063   0A68           00251         GOTO    RESULTS
+                      00252 
+                      00253 
+0064   0C32           00254                 MOVLW   TRIPLO_TCH
+0065   0666           00255                 BTFSC   GPIO, 3
+0066   0C10           00256         MOVLW   TRIPLO_PRX      ; yes, compare lower bytes
+0067   0093           00257         SUBWF   DIFFERENCELO,W
+0068                  00258 RESULTS
+MPASM  5.15                      10FTOUCH.ASM   5-20-2008  16:12:10         PAGE  7
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+                      00259 
+0068   0703           00260         BTFSS   STATUS,C        ; was the difference > trip point?
+0069   0800           00261         RETLW   .0              ; no, return
+                      00262 
+006A   0515           00263         BSF     USERFLAG,KEYDOWN ; yes, set the keydown flag
+                      00264 
+006B   0800           00265         RETLW   .0
+                      00266 ;}
+                      00267 ;********************************************************
+                      00268 ;* subroutine: getfrequency                             *
+                      00269 ;* descr: converts to binary coded decimal              *
+                      00270 ;*                                                      *
+                      00271 ;* out:   freqhi:freqlo  with frequency                 *
+                      00272 ;********************************************************
+                      00273 ;{
+006C                  00274 GETFREQUENCY
+006C   0CF7           00275         MOVLW   B'11110111'
+                      00276               ;   ||||||||_ ps0
+                      00277               ;   |||||||__ ps1
+                      00278               ;   ||||||___ ps2   set prescaler to 1:256
+                      00279               ;   |||||____ psa   prescaler assigned to tmr0
+                      00280               ;   ||||_____ t0se  increment on high to low
+                      00281               ;   |||______ t0cs  transition on t0cki
+                      00282               ;   ||_______ #gppu pull-ups disabled
+                      00283               ;   |________ #gpwu wake-up on pin change disabled
+006D   0002           00284         OPTION
+                      00285 
+006E   0C0B           00286         MOVLW   B'00001011'
+                      00287               ;   ||||||||_ #cwu    wake-up on comp change disabled
+                      00288               ;   |||||||__ cpref   pos ref is cin+
+                      00289               ;   ||||||___ cnref   neg ref is internal 0.6V reference
+                      00290               ;   |||||____ cmpon   comparator on
+                      00291               ;   ||||_____ cmpt0cs comparator output used as tmr0 clock
+                      00292               ;   |||______ pol     output is inverted
+                      00293               ;   ||_______ #couten output is placed on cout pin
+                      00294               ;   |________ cmpout  -read only bit-
+006F   0027           00295         MOVWF   CMCON0
+                      00296         
+0070   0CFF           00297         MOVLW   .255            ; frequency will be stored in freqhi:freqlo
+0071   002C           00298         MOVWF   FREQLO          ; freqlo is pre-initialised here
+                      00299 
+0072   0061           00300         CLRF    TMR0            ; clear tmr0 and the 1:256 prescaler
+0073   0C21           00301         MOVLW   GATEDTIME
+0074   090E           00302         CALL    DELAY           ; wait N mSec for scan time
+                      00303 
+0075   0467           00304         BCF     CMCON0,CMPON    ; turn off oscillator
+                      00305 
+0076   0201           00306         MOVF    TMR0,W          ; high byte of value is stored in tmr0
+0077   002B           00307         MOVWF   FREQHI          ; low value is still in the prescaler
+                      00308 
+                      00309 ; To get the value from the prescaler (which is not directly readable),
+                      00310 ; the clock source for tmr0 is changed to Fosc/4.
+                      00311 ; Next the value of tmr0 is observed. The time is takes for the next
+MPASM  5.15                      10FTOUCH.ASM   5-20-2008  16:12:10         PAGE  8
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+                      00312 ; increment is an indication of the value of the prescaler.
+                      00313 
+0078   0CD7           00314         MOVLW   B'11010111'     ; change clock source to Fosc/4
+0079   0002           00315         OPTION
+                      00316 
+007A                  00317 MEASUREPRESCALER
+007A   02AC           00318         INCF    FREQLO          ; was initialised to 255 and set to 0 here
+007B   0201           00319         MOVF    TMR0,W          ; get the current value of tmr0
+007C   018B           00320         XORWF   FREQHI,W        ; compare it with the original value of tmr0
+007D   0643           00321         BTFSC   STATUS,Z        ; did tmr0 increment?
+007E   0A7A           00322         GOTO    MEASUREPRESCALER ; no, loop and increment freqlo
+                      00323 
+                      00324 ; Now freqlo ranges from 0 to 43. The next section will muliply it
+                      00325 ; with 6 and clipped to 255, to get the lobyte of the frequency count.
+                      00326 
+007F   0403           00327         BCF     STATUS,C        ; clear the carry bit
+0080   036C           00328         RLF     FREQLO          ; muliply by 2
+0081   034C           00329         RLF     FREQLO ,W       ; and muliply by 2 again, but put the result in w
+0082   01EC           00330         ADDWF   FREQLO          ; add it to the doubled value (multiplied by 6)
+0083   0703           00331         BTFSS   STATUS,C        ; did it overflow (6 x 43 = 258)
+0084   0A87           00332         GOTO    NOOVERFLOW      ; no, go on
+0085   0CFF           00333         MOVLW   .255            ; yes, clip it to 255
+0086   002C           00334         MOVWF   FREQLO 
+                      00335 
+0087                  00336 NOOVERFLOW
+0087   026C           00337         COMF    FREQLO          ; the time for the prescaler to roll over was measured,
+                      00338                                 ; so its value was 255 - prescaler value
+                      00339 
+                      00340 ; Because of the way the prescaler rollover time was measured (6 Tcy in measureprescaler),
+                      00341 ; atleast the 2 least significant bits in freqhi:frequlo are useless.
+                      00342 ; Therefore the final result is divided by 4.
+                      00343 
+0088   0403           00344         BCF     STATUS,C
+0089   032B           00345         RRF     FREQHI
+008A   032C           00346         RRF     FREQLO
+008B   0403           00347         BCF     STATUS,C
+008C   032B           00348         RRF     FREQHI
+008D   032C           00349         RRF     FREQLO          ; divide by 4
+                      00350 
+                      00351 
+008E   0467           00352                 BCF             CMCON0, CMPON   ; turn comp off to conserve power
+                      00353 
+008F   0800           00354         RETLW   .0              ; done
+                      00355 ;}
+                      00356 
+                      00357 
+                      00358 
+                      00359 ;********************************************************
+                      00360 ;* main                                                 *
+                      00361 ;********************************************************
+                      00362 ;{
+0090                  00363 MAIN
+0090   0C21           00364         MOVLW   GATEDTIME
+MPASM  5.15                      10FTOUCH.ASM   5-20-2008  16:12:10         PAGE  9
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+0091   090E           00365         CALL    DELAY           ; wait 30mSec
+                      00366 
+0092   0C31           00367         MOVLW   .49
+0093   0033           00368         MOVWF   DIFFERENCELO
+0094   0C01           00369         MOVLW   .1
+0095   0032           00370         MOVWF   DIFFERENCEHI
+0096   095D           00371         CALL    EVALDIFFERENCE
+                      00372         
+0097   0000           00373         NOP
+                      00374 
+0098   096C           00375         CALL    GETFREQUENCY
+0099   020B           00376         MOVF    FREQHI,W
+009A   002D           00377         MOVWF   AVERAGEHI
+009B   020C           00378         MOVF    FREQLO,W
+009C   002E           00379         MOVWF   AVERAGELO
+                      00380 
+                      00381 
+009D                  00382 MAINLOOP
+                      00383                 ; Sensing and Detection
+009D   096C           00384         CALL    GETFREQUENCY
+009E   0917           00385         CALL    AVERAGE
+009F   0949           00386         CALL    CHECKDIFFERENCE
+                      00387 
+                      00388                 ; Check if Key Was Pressed
+00A0   0615           00389                 BTFSC   USERFLAG, KEYDOWN
+00A1   0AA4           00390                 GOTO    REACT_KEYDOWN
+00A2   0715           00391                 BTFSS   USERFLAG, KEYDOWN
+00A3   0AA6           00392                 GOTO    REACT_KEYUP
+                      00393 
+                      00394                 ; If a press was detected, output low (LED ON) else output high (LED OFF)
+00A4                  00395 REACT_KEYDOWN:
+00A4   0426           00396                 BCF             GPIO, OUTPUT                    ; turn led on
+00A5   0AA8           00397                 GOTO    FINISH_LOOP
+00A6                  00398 REACT_KEYUP:
+00A6   0526           00399                 BSF             GPIO, OUTPUT                    ; turn led off
+00A7   0AA8           00400                 GOTO    FINISH_LOOP
+                      00401 
+                      00402 
+                      00403                 ; If a hand was detected, react with 100ms pulse on first instance of detection
+                      00404 ; One-shot pulse high output code:
+                      00405 ; -------------------------------
+                      00406 ;react_keydown:
+                      00407 ;               btfsc   userflag, oneshotdone
+                      00408 ;               goto    skip_signal                             ; if one-shot output has happened alread
+                            y, don't signal again
+                      00409 ;               bsf             gpio, output
+                      00410 ;               movlw   .100                                ; delay 100ms
+                      00411 ;               call    delay
+                      00412 ;               bcf             gpio, output
+                      00413 ;skip_signal:
+                      00414 ;               bsf             userflag, oneshotdone   ; signal not to repeat the press.
+                      00415 ;               goto    finish_loop
+                      00416 ;
+MPASM  5.15                      10FTOUCH.ASM   5-20-2008  16:12:10         PAGE 10
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+                      00417 ;react_keyup:
+                      00418 ;               bcf             gpio, output                    ; clear output
+                      00419 ;               bcf             userflag, oneshotdone   ; clear (reset) one-shot flag
+                      00420 ;               goto    finish_loop
+                      00421 ; -------------------------------
+                      00422 
+                      00423                 
+                      00424 
+00A8                  00425 FINISH_LOOP:    
+                      00426                 ; Sleep
+                      00427  ;              movlw   b'11111011'                             ; Prescalar on 1:8 WDT, assign to WDT
+                      00428  ;      option
+                      00429  ;              movlw   .1
+                      00430  ;              call    delay                                   ; delay for 1 ms to ensure comparator of
+                            f, everything settled before sleep
+                      00431  ;              sleep                                                   ; goto sleep for ~144ms (8*18ms)
+                      00432  ;              nop                                                             ; don't pre-fetch anythi
+                            ng unintended after sleep instruction
+                      00433  ;      Sleep Code Commented out
+                      00434                 
+                      00435                 ; Sleeping more between scans will reduce avg current
+                      00436                 ; 33ms on, 144ms off avg draw =  ~70uA          WDT prescale 1:8        (5.6scan per sec
+                            )
+                      00437                 ; 33ms on, 288ms off avg draw =  ~50ua          WDT prescale 1:16       (3.1scan per sec
+                            )
+                      00438 
+                      00439                 
+00A8                  00440 WAKE_FROM_SLEEP:
+                      00441  ;      movlw   b'11110111'                             ; Return Prescalar to 1:256 assigned to TMR0
+                      00442  ;      option                                                  ; re-init option reg
+                      00443  ;              movlw   b'00001011'
+                      00444  ;              movwf   cmcon0                                  ; re-init cmcon0
+                      00445  ;              movlw   b'11111001'
+                      00446  ;              tris    gpio                                    ; re-init gpio
+                      00447  ;      Sleep code commented
+                      00448         
+00A8   0A9D           00449                 GOTO    MAINLOOP                                ; stay in main loop
+                      00450 
+                      00451 
+                      00452 ;---------------------------------------------------------------------       
+                      00453         END
+MPASM  5.15                      10FTOUCH.ASM   5-20-2008  16:12:10         PAGE 11
+
+
+SYMBOL TABLE
+  LABEL                             VALUE 
+
+AVDEPTH                           00000005
+AVERAGE                           00000017
+AVERAGEFRACTION                   0000000F
+AVERAGEHI                         0000000D
+AVERAGELO                         0000000E
+AVHITEMP                          00000010
+AVLOTEMP                          00000011
+C                                 00000000
+CAL0                              00000001
+CAL1                              00000002
+CAL2                              00000003
+CAL3                              00000004
+CAL4                              00000005
+CAL5                              00000006
+CAL6                              00000007
+CHECKDIFFERENCE                   00000049
+CMCON0                            00000007
+CMPON                             00000003
+CMPOUT                            00000007
+CNREF                             00000002
+CPREF                             00000001
+CWUF                              00000006
+DC                                00000001
+DELAY                             0000000E
+DIFFERENCEHI                      00000012
+DIFFERENCELO                      00000013
+DIVIDEBY2PWRN                     00000040
+EVALDIFFERENCE                    0000005D
+F                                 00000001
+FINISH_LOOP                       000000A8
+FOSC4                             00000000
+FREQHI                            0000000B
+FREQLO                            0000000C
+FSR                               00000004
+GATEDTIME                         00000021
+GETFREQUENCY                      0000006C
+GP0                               00000000
+GP1                               00000001
+GP2                               00000002
+GP3                               00000003
+GPIO                              00000006
+GPWUF                             00000007
+HOPOVER                           00000026
+HOPOVER2                          00000039
+HYSTERESIS                        000000C8
+INDF                              00000000
+INIT                              00000003
+JUMPBACKAFTERSLEEP                00000001
+JUMPINIT                          00000001
+KEYDOWN                           00000000
+LOCKAVG                           00000001
+MAIN                              00000090
+MAINLOOP                          0000009D
+MPASM  5.15                      10FTOUCH.ASM   5-20-2008  16:12:10         PAGE 12
+
+
+SYMBOL TABLE
+  LABEL                             VALUE 
+
+MEASUREPRESCALER                  0000007A
+NOOVERFLOW                        00000087
+NOT_CMPT0CS                       00000004
+NOT_COUTEN                        00000006
+NOT_CWU                           00000000
+NOT_GPPU                          00000006
+NOT_GPWU                          00000007
+NOT_PD                            00000003
+NOT_TO                            00000004
+ONESHOTDONE                       00000004
+OSCCAL                            00000005
+OUTPUT                            00000001
+PCL                               00000002
+POL                               00000005
+PS0                               00000000
+PS1                               00000001
+PS2                               00000002
+PSA                               00000003
+REACT_KEYDOWN                     000000A4
+REACT_KEYUP                       000000A6
+RESET                             00000000
+RESULTS                           00000068
+SHIFT1                            00000042
+SLEEPING                          00000003
+STATUS                            00000003
+T0CS                              00000005
+T0PRESCALER                       00000014
+T0SE                              00000004
+TEMP1                             00000008
+TEMP2                             00000009
+TMR0                              00000001
+TRIPHI_PRX                        00000000
+TRIPHI_TCH                        00000001
+TRIPLO_PRX                        00000010
+TRIPLO_TCH                        00000032
+TXREG                             0000000A
+USERFLAG                          00000015
+W                                 00000000
+WAIT                              0000000F
+WAKE_FROM_SLEEP                   000000A8
+Z                                 00000002
+_CP_OFF                           00000FFF
+_CP_ON                            00000FF7
+_INTRC_OSC                        00000FFF
+_MCLRE_OFF                        00000FEF
+_MCLRE_ON                         00000FFF
+_WDT_OFF                          00000FFB
+_WDT_ON                           00000FFF
+__10F206                          00000001
+MPASM  5.15                      10FTOUCH.ASM   5-20-2008  16:12:10         PAGE 13
+
+
+MEMORY USAGE MAP ('X' = Used,  '-' = Unused)
+
+
+0000 : XXXXXXXXXXXXXXXX XXXXXXXXXXXXXXXX XXXXXXXXXXXXXXXX XXXXXXXXXXXXXXXX
+0040 : XXXXXXXXXXXXXXXX XXXXXXXXXXXXXXXX XXXXXXXXXXXXXXXX XXXXXXXXXXXXXXXX
+0080 : XXXXXXXXXXXXXXXX XXXXXXXXXXXXXXXX XXXXXXXXX------- ----------------
+0FC0 : ---------------- ---------------- ---------------- ---------------X
+
+All other memory blocks unused.
+
+Program Memory Words Used:   169
+Program Memory Words Free:   343
+
+
+Errors   :     0
+Warnings :     0 reported,     0 suppressed
+Messages :     0 reported,    29 suppressed
+
+
