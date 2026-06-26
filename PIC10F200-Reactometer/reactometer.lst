@@ -1,0 +1,897 @@
+MPASM  5.51                   REACTOMETER.ASM   12-3-2025  14:59:21         PAGE  1
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+                      00001 ;**************************************************************************
+                      00002 ; FILE:      reactometer.asm                                              *
+                      00003 ; CONTENTS:  Reactometer reaction timer                                   *
+                      00004 ; COPYRIGHT: MadLab Ltd. 2005                                             *
+                      00005 ; AUTHOR:    James Hutchby                                                *
+                      00006 ; UPDATED:   02/03/05                                                     *
+                      00007 ;**************************************************************************
+                      00008 
+                      00009      list p=10F200
+                      00010 
+                      00011      include "p10f200.inc"
+                      00001         LIST
+                      00002 
+                      00003 ;==========================================================================
+                      00004 ;  MPASM PIC10F200 processor include
+                      00005 ; 
+                      00006 ;  (c) Copyright 1999-2013 Microchip Technology, All rights reserved
+                      00007 ;==========================================================================
+                      00008 
+                      00151         LIST
+                      00012 
+0FFF   0FE3           00013      __config _IntRC_OSC & _WDT_OFF & _MCLRE_OFF & _CP_ON
+                      00014 
+0100   000E 000D 0001 00015      __idlocs h'ED10'
+       0000 
+                      00016 
+                      00017      errorlevel -305
+                      00018 
+                      00019 
+                      00020 ;**************************************************************************
+                      00021 ;                                                                         *
+                      00022 ; Specification                                                           *
+                      00023 ;                                                                         *
+                      00024 ;**************************************************************************
+                      00025 
+                      00026 ; power-up self-test - all LEDs lit in turn (in demonstration of
+                      00027 ; scoring system)
+                      00028 
+                      00029 ; button starts running lights, freezes after random period
+                      00030 ; times player response to this and displays as score (1 to 10)
+                      00031 
+                      00032 ; player loses if button pressed too early or too late (all LEDs flash)
+                      00033 
+                      00034 
+                      00035 ;**************************************************************************
+                      00036 ;                                                                         *
+                      00037 ; Port assignments                                                        *
+                      00038 ;                                                                         *
+                      00039 ;**************************************************************************
+                      00040 
+  0000000F            00041 GPIO_IO   equ  b'1111'             ; port I/O status
+                      00042 
+  00000003            00043 BUTTON    equ  3                   ; pushbutton
+MPASM  5.51                   REACTOMETER.ASM   12-3-2025  14:59:21         PAGE  2
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+                      00044 
+  0000000C            00045 IO_1      equ  b'1100'             ; LED I/O status and masks
+  0000000E            00046 MASK_1    equ  b'1110'
+  0000000D            00047 IO_2_3    equ  b'1101'
+  0000000D            00048 MASK_2_3  equ  b'1101'
+  0000000E            00049 IO_4_5    equ  b'1110'
+  0000000F            00050 MASK_4_5  equ  b'1111'
+  0000000B            00051 IO_6_7    equ  b'1011'
+  0000000F            00052 MASK_6_7  equ  b'1111'
+                      00053 
+                      00054 
+                      00055 ;**************************************************************************
+                      00056 ;                                                                         *
+                      00057 ; Constants and timings                                                   *
+                      00058 ;                                                                         *
+                      00059 ;**************************************************************************
+                      00060 
+  003D0900            00061 CLOCK     equ  d'4000000'     ; processor clock frequency in Hz
+                      00062 
+  0000000A            00063 SCORE     equ  d'10'          ; maximum score
+  00000019            00064 RELEASE   equ  d'25'          ; button release time
+                      00065 
+  0000000C            00066 MIN_REACT      equ  d'12'     ; minimum reaction time
+  00000020            00067 MAX_REACT      equ  d'32'     ; maximum reaction time
+                      00068 
+                      00069 ; delay periods in ms
+  00000019            00070 POLL_DELAY     equ  d'25'
+  000000E1            00071 DEMO_DELAY     equ  d'225'
+  0000004B            00072 RUNNING_DELAY  equ  d'75'
+  000000FA            00073 FREEZE_DELAY   equ  d'250'
+  00000014            00074 REACT_DELAY    equ  d'20'
+  00000028            00075 SCORE_DELAY    equ  d'40'
+  000000C8            00076 FLASH_DELAY    equ  d'200'
+                      00077 
+                      00078 
+                      00079 ;**************************************************************************
+                      00080 ;                                                                         *
+                      00081 ; File register usage                                                     *
+                      00082 ;                                                                         *
+                      00083 ;**************************************************************************
+                      00084 
+  00000010            00085 RAM  set  h'10'
+                      00086 
+                      00087      cblock RAM
+  00000010            00088      release                       ; button timer
+  00000011            00089      leds                          ; LED flags
+  00000012            00090      score                         ; score, 0 to 10
+  00000013            00091      react                         ; reaction timer
+  00000014            00092      random                        ; random number
+  00000015            00093      timer                         ; timer
+  00000016            00094      work1, work2                  ; work registers
+  00000018            00095      RAM_
+                      00096      endc
+MPASM  5.51                   REACTOMETER.ASM   12-3-2025  14:59:21         PAGE  3
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+                      00097 
+                      00098      if RAM_ > h'20'
+                      00099      error "File register usage overflow"
+                      00100      endif
+                      00101 
+                      00102 ; LED flags
+  00000000            00103 LED_1          equ  0              ; set if LED1 on
+  00000001            00104 LED_2_3        equ  1              ; set if LED2 and LED3 on
+  00000002            00105 LED_4_5        equ  2              ; set if LED4 and LED5 on
+  00000003            00106 LED_6_7        equ  3              ; set if LED6 and LED7 on
+                      00107 
+                      00108 
+                      00109 ;**************************************************************************
+                      00110 ;                                                                         *
+                      00111 ; Macros                                                                  *
+                      00112 ;                                                                         *
+                      00113 ;**************************************************************************
+                      00114 
+                      00115 routine   macro label              ; routine
+                      00116 label
+                      00117           endm
+                      00118 
+                      00119 table     macro label              ; define lookup table
+                      00120 label     addwf PCL
+                      00121           endm
+                      00122 
+                      00123 entry     macro value              ; define table entry
+                      00124           retlw value
+                      00125           endm
+                      00126 
+                      00127 index     macro label              ; index lookup table
+                      00128           call label
+                      00129           endm
+                      00130 
+                      00131 jump      macro label              ; jump through table
+                      00132           goto label
+                      00133           endm
+                      00134 
+                      00135 tstw      macro                    ; test w register
+                      00136           iorlw 0
+                      00137           endm
+                      00138 
+                      00139 movff     macro f1,f2              ; move file to file
+                      00140           movfw f1
+                      00141           movwf f2
+                      00142           endm
+                      00143 
+                      00144 movlf     macro n,f                ; move literal to file
+                      00145           movlw n
+                      00146           movwf f
+                      00147           endm
+                      00148 
+                      00149 
+MPASM  5.51                   REACTOMETER.ASM   12-3-2025  14:59:21         PAGE  4
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+                      00150 ;--------------------------------------------------------------------------
+                      00151 ; reset vector
+                      00152 ;--------------------------------------------------------------------------
+                      00153 
+0000                  00154           org 0
+                      00155 
+0000   0EFE           00156           andlw ~1
+0001   0025           00157           movwf OSCCAL
+                      00158 
+0002   0A7A           00159           goto main_entry
+                      00160 
+                      00161 
+                      00162 ;**************************************************************************
+                      00163 ;                                                                         *
+                      00164 ; Lookup tables                                                           *
+                      00165 ;                                                                         *
+                      00166 ;**************************************************************************
+                      00167 
+                      00168           table scores
+0003   01E2               M scores     addwf PCL
+                      00169 
+                      00170           entry (0<<LED_1)|(0<<LED_2_3)|(0<<LED_4_5)|(0<<LED_6_7)
+0004   0800               M           retlw (0<<LED_1)|(0<<LED_2_3)|(0<<LED_4_5)|(0<<LED_6_7)
+                      00171           entry (0<<LED_1)|(0<<LED_2_3)|(0<<LED_4_5)|(1<<LED_6_7)
+0005   0808               M           retlw (0<<LED_1)|(0<<LED_2_3)|(0<<LED_4_5)|(1<<LED_6_7)
+                      00172           entry (0<<LED_1)|(0<<LED_2_3)|(1<<LED_4_5)|(0<<LED_6_7)
+0006   0804               M           retlw (0<<LED_1)|(0<<LED_2_3)|(1<<LED_4_5)|(0<<LED_6_7)
+                      00173           entry (0<<LED_1)|(1<<LED_2_3)|(0<<LED_4_5)|(0<<LED_6_7)
+0007   0802               M           retlw (0<<LED_1)|(1<<LED_2_3)|(0<<LED_4_5)|(0<<LED_6_7)
+                      00174           entry (1<<LED_1)|(0<<LED_2_3)|(0<<LED_4_5)|(0<<LED_6_7)
+0008   0801               M           retlw (1<<LED_1)|(0<<LED_2_3)|(0<<LED_4_5)|(0<<LED_6_7)
+                      00175           entry (1<<LED_1)|(0<<LED_2_3)|(0<<LED_4_5)|(1<<LED_6_7)
+0009   0809               M           retlw (1<<LED_1)|(0<<LED_2_3)|(0<<LED_4_5)|(1<<LED_6_7)
+                      00176           entry (1<<LED_1)|(0<<LED_2_3)|(1<<LED_4_5)|(0<<LED_6_7)
+000A   0805               M           retlw (1<<LED_1)|(0<<LED_2_3)|(1<<LED_4_5)|(0<<LED_6_7)
+                      00177           entry (1<<LED_1)|(1<<LED_2_3)|(0<<LED_4_5)|(0<<LED_6_7)
+000B   0803               M           retlw (1<<LED_1)|(1<<LED_2_3)|(0<<LED_4_5)|(0<<LED_6_7)
+                      00178           entry (1<<LED_1)|(1<<LED_2_3)|(0<<LED_4_5)|(1<<LED_6_7)
+000C   080B               M           retlw (1<<LED_1)|(1<<LED_2_3)|(0<<LED_4_5)|(1<<LED_6_7)
+                      00179           entry (1<<LED_1)|(1<<LED_2_3)|(1<<LED_4_5)|(0<<LED_6_7)
+000D   0807               M           retlw (1<<LED_1)|(1<<LED_2_3)|(1<<LED_4_5)|(0<<LED_6_7)
+                      00180           entry (1<<LED_1)|(1<<LED_2_3)|(1<<LED_4_5)|(1<<LED_6_7)
+000E   080F               M           retlw (1<<LED_1)|(1<<LED_2_3)|(1<<LED_4_5)|(1<<LED_6_7)
+                      00181 
+                      00182 
+                      00183           table reactions
+000F   01E2               M reactions     addwf PCL
+                      00184 
+                      00185           entry d'10'
+0010   080A               M           retlw d'10'
+                      00186           entry d'9'
+0011   0809               M           retlw d'9'
+                      00187           entry d'8'
+MPASM  5.51                   REACTOMETER.ASM   12-3-2025  14:59:21         PAGE  5
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+0012   0808               M           retlw d'8'
+                      00188           entry d'7'
+0013   0807               M           retlw d'7'
+                      00189           entry d'6'
+0014   0806               M           retlw d'6'
+                      00190           entry d'5'
+0015   0805               M           retlw d'5'
+                      00191           entry d'5'
+0016   0805               M           retlw d'5'
+                      00192           entry d'4'
+0017   0804               M           retlw d'4'
+                      00193           entry d'4'
+0018   0804               M           retlw d'4'
+                      00194           entry d'3'
+0019   0803               M           retlw d'3'
+                      00195           entry d'3'
+001A   0803               M           retlw d'3'
+                      00196           entry d'2'
+001B   0802               M           retlw d'2'
+                      00197           entry d'2'
+001C   0802               M           retlw d'2'
+                      00198           entry d'2'
+001D   0802               M           retlw d'2'
+                      00199           entry d'1'
+001E   0801               M           retlw d'1'
+                      00200           entry d'1'
+001F   0801               M           retlw d'1'
+                      00201           entry d'1'
+0020   0801               M           retlw d'1'
+                      00202           entry d'1'
+0021   0801               M           retlw d'1'
+                      00203           entry d'1'
+0022   0801               M           retlw d'1'
+                      00204           entry d'1'
+0023   0801               M           retlw d'1'
+                      00205 
+                      00206 
+                      00207 ;**************************************************************************
+                      00208 ;                                                                         *
+                      00209 ; Procedures                                                              *
+                      00210 ;                                                                         *
+                      00211 ;**************************************************************************
+                      00212 
+                      00213 ;--------------------------------------------------------------------------
+                      00214 ; polls the button, returns NZ flag set if pressed
+                      00215 ;--------------------------------------------------------------------------
+                      00216 
+                      00217           routine poll_button
+0024                      M poll_button
+                      00218 
+0024   0066           00219           clrf GPIO                     ; LEDs off
+0025   0C0F           00220           movlw GPIO_IO
+0026   0006           00221           tris GPIO
+MPASM  5.51                   REACTOMETER.ASM   12-3-2025  14:59:21         PAGE  6
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+                      00222 
+0027   0C8F           00223           movlw b'10001111'             ; enable weak pull-ups
+0028   0002           00224           option
+                      00225 
+0029   0543           00226           setz
+002A   0766           00227           btfss GPIO,BUTTON
+002B   0443           00228           clrz
+                      00229 
+002C   0CCF           00230           movlw b'11001111'             ; disable weak pull-ups
+002D   0002           00231           option
+                      00232 
+002E   0800           00233           retlw 0
+                      00234 
+                      00235 
+                      00236 ;--------------------------------------------------------------------------
+                      00237 ; waits while multiplexing the LEDs, fed with the wait in ms in w reg,
+                      00238 ; returns NZ flag set if button pressed
+                      00239 ;--------------------------------------------------------------------------
+                      00240 
+                      00241           routine long_wait
+002F                      M long_wait
+                      00242 
+002F   0040           00243           clrw
+                      00244 
+                      00245           routine wait_ms
+0030                      M wait_ms
+                      00246 
+                      00247 LED_      macro led,io,mask
+                      00248 
+                      00249           local wait1,wait2
+                      00250 
+                      00251           movlw GPIO_IO
+                      00252           tris GPIO
+                      00253           clrf GPIO
+                      00254 
+                      00255           btfss leds,led
+                      00256           goto wait1
+                      00257 
+                      00258           movlf mask,GPIO
+                      00259           movlw io
+                      00260           tris GPIO
+                      00261 
+                      00262 WAIT      set  CLOCK/(d'4000'*d'12')    ; 1/4 ms
+                      00263 
+                      00264 wait1     movlf WAIT,work2
+                      00265 wait2     decfsz work2                  ; [4]
+                      00266           goto wait2                    ; [8]
+                      00267 
+                      00268           endm
+                      00269 
+0030   0036           00270           movwf work1
+                      00271 
+                      00272 wait3     LED_ LED_1,IO_1,MASK_1
+MPASM  5.51                   REACTOMETER.ASM   12-3-2025  14:59:21         PAGE  7
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+                          M 
+  0000                    M           local wait1,wait2
+                          M 
+0031   0C0F               M           movlw GPIO_IO
+0032   0006               M           tris GPIO
+0033   0066               M           clrf GPIO
+                          M 
+0034   0711               M           btfss leds,LED_1
+0035   0A3A               M           goto wait1
+                          M 
+                          M           movlf MASK_1,GPIO
+0036   0C0E               M           movlw MASK_1
+0037   0026               M           movwf GPIO
+0038   0C0C               M           movlw IO_1
+0039   0006               M           tris GPIO
+                          M 
+  00000053                M WAIT      set  CLOCK/(d'4000'*d'12')    ; 1/4 ms
+                          M 
+                          M wait1     movlf WAIT,work2
+003A   0C53               M           movlw WAIT
+003B   0037               M           movwf work2
+003C   02F7               M wait2     decfsz work2                  ; [4]
+003D   0A3C               M           goto wait2                    ; [8]
+                          M 
+                      00273           LED_ LED_2_3,IO_2_3,MASK_2_3
+                          M 
+  0000                    M           local wait1,wait2
+                          M 
+003E   0C0F               M           movlw GPIO_IO
+003F   0006               M           tris GPIO
+0040   0066               M           clrf GPIO
+                          M 
+0041   0731               M           btfss leds,LED_2_3
+0042   0A47               M           goto wait1
+                          M 
+                          M           movlf MASK_2_3,GPIO
+0043   0C0D               M           movlw MASK_2_3
+0044   0026               M           movwf GPIO
+0045   0C0D               M           movlw IO_2_3
+0046   0006               M           tris GPIO
+                          M 
+  00000053                M WAIT      set  CLOCK/(d'4000'*d'12')    ; 1/4 ms
+                          M 
+                          M wait1     movlf WAIT,work2
+0047   0C53               M           movlw WAIT
+0048   0037               M           movwf work2
+0049   02F7               M wait2     decfsz work2                  ; [4]
+004A   0A49               M           goto wait2                    ; [8]
+                          M 
+                      00274           LED_ LED_4_5,IO_4_5,MASK_4_5
+                          M 
+  0000                    M           local wait1,wait2
+                          M 
+MPASM  5.51                   REACTOMETER.ASM   12-3-2025  14:59:21         PAGE  8
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+004B   0C0F               M           movlw GPIO_IO
+004C   0006               M           tris GPIO
+004D   0066               M           clrf GPIO
+                          M 
+004E   0751               M           btfss leds,LED_4_5
+004F   0A54               M           goto wait1
+                          M 
+                          M           movlf MASK_4_5,GPIO
+0050   0C0F               M           movlw MASK_4_5
+0051   0026               M           movwf GPIO
+0052   0C0E               M           movlw IO_4_5
+0053   0006               M           tris GPIO
+                          M 
+  00000053                M WAIT      set  CLOCK/(d'4000'*d'12')    ; 1/4 ms
+                          M 
+                          M wait1     movlf WAIT,work2
+0054   0C53               M           movlw WAIT
+0055   0037               M           movwf work2
+0056   02F7               M wait2     decfsz work2                  ; [4]
+0057   0A56               M           goto wait2                    ; [8]
+                          M 
+                      00275           LED_ LED_6_7,IO_6_7,MASK_6_7
+                          M 
+  0000                    M           local wait1,wait2
+                          M 
+0058   0C0F               M           movlw GPIO_IO
+0059   0006               M           tris GPIO
+005A   0066               M           clrf GPIO
+                          M 
+005B   0771               M           btfss leds,LED_6_7
+005C   0A61               M           goto wait1
+                          M 
+                          M           movlf MASK_6_7,GPIO
+005D   0C0F               M           movlw MASK_6_7
+005E   0026               M           movwf GPIO
+005F   0C0B               M           movlw IO_6_7
+0060   0006               M           tris GPIO
+                          M 
+  00000053                M WAIT      set  CLOCK/(d'4000'*d'12')    ; 1/4 ms
+                          M 
+                          M wait1     movlf WAIT,work2
+0061   0C53               M           movlw WAIT
+0062   0037               M           movwf work2
+0063   02F7               M wait2     decfsz work2                  ; [4]
+0064   0A63               M           goto wait2                    ; [8]
+                          M 
+                      00276 
+0065   0924           00277           call poll_button              ; button pressed ?
+0066   0643 0A6D      00278           bz wait4                      ; branch if not
+                      00279 
+0068   0230           00280           tstf release                  ; waiting for release ?
+0069   0743 0A70      00281           bnz wait5                     ; branch if yes
+                      00282 
+MPASM  5.51                   REACTOMETER.ASM   12-3-2025  14:59:21         PAGE  9
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+006B   0443           00283           clrz                          ; signal button pressed
+006C   0800           00284           retlw 0
+                      00285 
+006D   0230           00286 wait4     tstf release
+006E   0743           00287           skpz
+006F   00F0           00288           decf release
+                      00289 
+0070   02F6           00290 wait5     decfsz work1
+0071   0A31           00291           goto wait3
+                      00292 
+0072   0543           00293           setz                          ; signal button not pressed
+0073   0800           00294           retlw 0
+                      00295 
+                      00296 
+                      00297 ;--------------------------------------------------------------------------
+                      00298 ; shows the score, fed with the wait period in ms in w reg
+                      00299 ;--------------------------------------------------------------------------
+                      00300 
+                      00301           routine show_score
+0074                      M show_score
+                      00302 
+0074   0036           00303           movwf work1
+                      00304 
+0075   0212           00305           movfw score
+                      00306           index scores
+0076   0903               M           call scores
+0077   0031           00307           movwf leds
+                      00308 
+0078   0216           00309           movfw work1
+0079   0A30           00310           goto wait_ms
+                      00311 
+                      00312 
+                      00313 ;--------------------------------------------------------------------------
+                      00314 ; main entry point
+                      00315 ;--------------------------------------------------------------------------
+                      00316 
+                      00317           routine main_entry
+007A                      M main_entry
+                      00318 
+007A   0066           00319           clrf GPIO                     ; initialise port
+007B   0C0F           00320           movlw GPIO_IO
+007C   0006           00321           tris GPIO
+                      00322 
+007D   0CCF           00323           movlw b'11001111'             ; weak pull-ups disabled
+007E   0002           00324           option
+                      00325 
+007F   0070           00326           clrf release
+                      00327 
+                      00328 ;         goto demo_mode
+                      00329 
+                      00330 
+                      00331 ;--------------------------------------------------------------------------
+                      00332 ; demo mode
+MPASM  5.51                   REACTOMETER.ASM   12-3-2025  14:59:21         PAGE 10
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+                      00333 ;--------------------------------------------------------------------------
+                      00334 
+                      00335           routine demo_mode
+0080                      M demo_mode
+                      00336 
+                      00337           movlf d'20',timer             ; initialise timer
+0080   0C14               M           movlw d'20'
+0081   0035               M           movwf timer
+                      00338 
+0082   0072           00339 demo1     clrf score
+                      00340 
+0083   0CE1           00341 demo2     movlw DEMO_DELAY
+0084   0974           00342           call show_score
+0085   0743 0A99      00343           bnz timer_mode                ; exit if button pressed
+                      00344 
+0087   02B2           00345           incf score
+                      00346 
+0088   0C0B           00347           movlw SCORE+1
+0089   0092           00348           subwf score,w
+008A   0743 0A83      00349           bnz demo2
+                      00350 
+008C   092F           00351           call long_wait
+008D   092F           00352           call long_wait
+008E   092F           00353           call long_wait
+008F   092F           00354           call long_wait
+                      00355 
+0090   02F5           00356           decfsz timer
+0091   0A82           00357           goto demo1
+                      00358 
+                      00359 ;         goto main_loop
+                      00360 
+                      00361 
+                      00362 ;--------------------------------------------------------------------------
+                      00363 ; main loop
+                      00364 ;--------------------------------------------------------------------------
+                      00365 
+                      00366           routine main_loop
+0092                      M main_loop
+                      00367 
+0092   0071           00368           clrf leds                     ; LEDs off
+                      00369 
+                      00370           movlf RELEASE,release         ; wait for button to be pressed
+0093   0C19               M           movlw RELEASE
+0094   0030               M           movwf release
+0095   0C19           00371 loop1     movlw POLL_DELAY
+0096   0930           00372           call wait_ms
+0097   0643 0A95      00373           bz loop1
+                      00374 
+                      00375 ;         goto timer_mode
+                      00376 
+                      00377 
+                      00378 ;--------------------------------------------------------------------------
+                      00379 ; reaction timer
+MPASM  5.51                   REACTOMETER.ASM   12-3-2025  14:59:21         PAGE 11
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+                      00380 ;--------------------------------------------------------------------------
+                      00381 
+                      00382           routine timer_mode
+0099                      M timer_mode
+                      00383 
+0099   0071           00384           clrf leds                     ; LEDs off
+                      00385 
+                      00386           movlf RELEASE,release
+009A   0C19               M           movlw RELEASE
+009B   0030               M           movwf release
+009C   0C19           00387           movlw POLL_DELAY
+009D   0930           00388           call wait_ms
+                      00389 
+                      00390 ;         clrf random
+                      00391 
+  00000021            00392 WAIT      set  CLOCK/(d'10000'*d'12')   ; 100 us
+                      00393 
+                      00394 time1     movlf WAIT,work1
+009E   0C21               M           movlw WAIT
+009F   0036               M           movwf work1
+00A0   02F6           00395 time2     decfsz work1                  ; [4]
+00A1   0AA0           00396           goto time2                    ; [8]
+                      00397 
+00A2   02B4           00398           incf random                   ; random timing from button release
+                      00399 
+00A3   0924           00400           call poll_button              ; wait for button to be released
+00A4   0743 0A9E      00401           bnz time1
+                      00402 
+00A6   0071           00403           clrf leds
+                      00404           movlf RELEASE,release
+00A7   0C19               M           movlw RELEASE
+00A8   0030               M           movwf release
+00A9   0C19           00405           movlw POLL_DELAY
+00AA   0930           00406           call wait_ms
+                      00407 
+00AB   0201           00408           movfw TMR0
+00AC   01B4           00409           xorwf random
+00AD   04F4           00410           bcf random,7
+00AE   04D4           00411           bcf random,6
+00AF   0C03           00412           movlw FREEZE_DELAY/RUNNING_DELAY
+00B0   01F4           00413           addwf random
+                      00414 
+                      00415           movlf 1<<LED_6_7,leds         ; running LEDs for random time
+00B1   0C08               M           movlw 1<<LED_6_7
+00B2   0031               M           movwf leds
+                      00416 
+00B3   0C4B           00417 time3     movlw RUNNING_DELAY
+00B4   0930           00418           call wait_ms
+00B5   0743 0AE1      00419           bnz time8                     ; branch if button pressed too early
+                      00420 
+00B7   0331           00421           rrf leds
+00B8   0C08           00422           movlw 1<<LED_6_7
+00B9   0603           00423           skpnc
+MPASM  5.51                   REACTOMETER.ASM   12-3-2025  14:59:21         PAGE 12
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+00BA   0031           00424           movwf leds
+                      00425 
+00BB   02F4           00426           decfsz random
+00BC   0AB3           00427           goto time3
+                      00428 
+00BD   0073           00429           clrf react                    ; freeze LEDs
+                      00430 
+00BE   0C14           00431 time4     movlw REACT_DELAY             ; wait for button to be pressed
+00BF   0930           00432           call wait_ms
+00C0   0743 0AC8      00433           bnz time5
+                      00434 
+00C2   02B3           00435           incf react
+                      00436 
+00C3   0C20           00437           movlw MAX_REACT
+00C4   0093           00438           subwf react,w
+00C5   0643 0AE1      00439           bz time8                      ; branch if button pressed too late
+                      00440 
+00C7   0ABE           00441           goto time4
+                      00442 
+00C8   0C0C           00443 time5     movlw MIN_REACT               ; calculate score
+00C9   0093           00444           subwf react,w
+00CA   0703           00445           skpc
+00CB   0040           00446           clrw
+                      00447           index reactions
+00CC   090F               M           call reactions
+00CD   0033           00448           movwf react
+                      00449 
+00CE   0072           00450           clrf score                    ; display score
+                      00451 time6     movlf -1,release
+00CF   0CFF               M           movlw -1
+00D0   0030               M           movwf release
+00D1   0C28           00452           movlw SCORE_DELAY
+00D2   0974           00453           call show_score
+00D3   02B2           00454           incf score
+00D4   00D2           00455           decf score,w
+00D5   0093           00456           subwf react,w
+00D6   0743 0ACF      00457           bnz time6
+                      00458 
+00D8   0075           00459           clrf timer                    ; wait for button to be pressed
+                      00460           movlf RELEASE,release
+00D9   0C19               M           movlw RELEASE
+00DA   0030               M           movwf release
+00DB   092F           00461 time7     call long_wait
+00DC   0743 0A99      00462           bnz timer_mode
+00DE   02F5           00463           decfsz timer
+00DF   0ADB           00464           goto time7
+                      00465 
+00E0   0A92           00466           goto main_loop
+                      00467 
+                      00468 time8     movlf d'100',timer            ; flash all LEDs to signal failure
+00E1   0C64               M           movlw d'100'
+00E2   0035               M           movwf timer
+                      00469           movlf h'ff',release
+MPASM  5.51                   REACTOMETER.ASM   12-3-2025  14:59:21         PAGE 13
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+00E3   0CFF               M           movlw h'ff'
+00E4   0030               M           movwf release
+                      00470           movlf h'ff',leds
+00E5   0CFF               M           movlw h'ff'
+00E6   0031               M           movwf leds
+00E7   0CC8           00471 time9     movlw FLASH_DELAY
+00E8   0930           00472           call wait_ms
+00E9   0743 0A99      00473           bnz timer_mode
+00EB   0271           00474           comf leds
+00EC   02F5           00475           decfsz timer
+00ED   0AE7           00476           goto time9
+                      00477 
+00EE   0A92           00478           goto main_loop
+                      00479 
+                      00480 
+                      00481           end
+MPASM  5.51                   REACTOMETER.ASM   12-3-2025  14:59:21         PAGE 14
+
+
+SYMBOL TABLE
+  LABEL                             VALUE 
+
+BUTTON                            00000003
+C                                 00000000
+CAL0                              00000001
+CAL1                              00000002
+CAL2                              00000003
+CAL3                              00000004
+CAL4                              00000005
+CAL5                              00000006
+CAL6                              00000007
+CLOCK                             003D0900
+DC                                00000001
+DEMO_DELAY                        000000E1
+F                                 00000001
+FLASH_DELAY                       000000C8
+FOSC4                             00000000
+FREEZE_DELAY                      000000FA
+FSR                               00000004
+GP0                               00000000
+GP1                               00000001
+GP2                               00000002
+GP3                               00000003
+GPIO                              00000006
+GPIO_IO                           0000000F
+GPWUF                             00000007
+INDF                              00000000
+IO_1                              0000000C
+IO_2_3                            0000000D
+IO_4_5                            0000000E
+IO_6_7                            0000000B
+LED_                              
+LED_1                             00000000
+LED_2_3                           00000001
+LED_4_5                           00000002
+LED_6_7                           00000003
+MASK_1                            0000000E
+MASK_2_3                          0000000D
+MASK_4_5                          0000000F
+MASK_6_7                          0000000F
+MAX_REACT                         00000020
+MIN_REACT                         0000000C
+NOT_GPPU                          00000006
+NOT_GPWU                          00000007
+NOT_PD                            00000003
+NOT_TO                            00000004
+OSCCAL                            00000005
+PCL                               00000002
+POLL_DELAY                        00000019
+PS0                               00000000
+PS1                               00000001
+PS2                               00000002
+PSA                               00000003
+RAM                               00000010
+RAM_                              00000018
+MPASM  5.51                   REACTOMETER.ASM   12-3-2025  14:59:21         PAGE 15
+
+
+SYMBOL TABLE
+  LABEL                             VALUE 
+
+REACT_DELAY                       00000014
+RELEASE                           00000019
+RUNNING_DELAY                     0000004B
+SCORE                             0000000A
+SCORE_DELAY                       00000028
+STATUS                            00000003
+T0CS                              00000005
+T0SE                              00000004
+TMR0                              00000001
+TRISIO0                           00000000
+TRISIO1                           00000001
+TRISIO2                           00000002
+TRISIO3                           00000003
+W                                 00000000
+WAIT                              00000021
+Z                                 00000002
+_CONFIG                           00000FFF
+_CP_OFF                           00000FFF
+_CP_ON                            00000FF7
+_IDLOC0                           00000100
+_IDLOC1                           00000101
+_IDLOC2                           00000102
+_IDLOC3                           00000103
+_IntRC_OSC                        00000FFF
+_MCLRE_OFF                        00000FEF
+_MCLRE_ON                         00000FFF
+_OSC_IntRC                        00000FFF
+_WDTE_OFF                         00000FFB
+_WDTE_ON                          00000FFF
+_WDT_OFF                          00000FFB
+_WDT_ON                           00000FFF
+__10F200                          00000001
+__DEBUG                           1
+demo1                             00000082
+demo2                             00000083
+demo_mode                         00000080
+entry                             
+index                             
+jump                              
+leds                              00000011
+long_wait                         0000002F
+loop1                             00000095
+main_entry                        0000007A
+main_loop                         00000092
+movff                             
+movlf                             
+poll_button                       00000024
+random                            00000014
+react                             00000013
+reactions                         0000000F
+release                           00000010
+routine                           
+score                             00000012
+MPASM  5.51                   REACTOMETER.ASM   12-3-2025  14:59:21         PAGE 16
+
+
+SYMBOL TABLE
+  LABEL                             VALUE 
+
+scores                            00000003
+show_score                        00000074
+table                             
+time1                             0000009E
+time2                             000000A0
+time3                             000000B3
+time4                             000000BE
+time5                             000000C8
+time6                             000000CF
+time7                             000000DB
+time8                             000000E1
+time9                             000000E7
+timer                             00000015
+timer_mode                        00000099
+tstw                              
+wait3                             00000031
+wait4                             0000006D
+wait5                             00000070
+wait_ms                           00000030
+work1                             00000016
+work2                             00000017
+
+
+MEMORY USAGE MAP ('X' = Used,  '-' = Unused)
+
+0000 : XXXXXXXXXXXXXXXX XXXXXXXXXXXXXXXX XXXXXXXXXXXXXXXX XXXXXXXXXXXXXXXX
+0040 : XXXXXXXXXXXXXXXX XXXXXXXXXXXXXXXX XXXXXXXXXXXXXXXX XXXXXXXXXXXXXXXX
+0080 : XXXXXXXXXXXXXXXX XXXXXXXXXXXXXXXX XXXXXXXXXXXXXXXX XXXXXXXXXXXXXXXX
+00C0 : XXXXXXXXXXXXXXXX XXXXXXXXXXXXXXXX XXXXXXXXXXXXXXX- ----------------
+0100 : XXXX------------ ---------------- ---------------- ----------------
+0FC0 : ---------------- ---------------- ---------------- ---------------X
+
+All other memory blocks unused.
+
+Program Memory Words Used:   239
+Program Memory Words Free:    17
+
+
+Errors   :     0
+Warnings :     0 reported,     0 suppressed
+Messages :     0 reported,    21 suppressed
+
+
